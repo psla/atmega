@@ -4,13 +4,6 @@
 #include <util/delay.h>
 #include "lib/dht11.h"
 
-#define DHT11_DATA_BIT_COUNT 40
-#define DHT11_PIN PINB
-#define DHT11_DQ PINB1
-#define DHTLIB_OK 2
-#define DHTLIB_ERROR_CHECKSUM 3
-#define DHTLIB_ERROR_TIMEOUT 4
-
 /**
   Blinks a double digit number
 
@@ -74,15 +67,6 @@ main (void)
 	{
 		if(fetchData(data))
 		{
-			if(data[2] > 23 || data[2] < 15) {
-				// too hot or too cold, impossible.
-				SET_BIT(PORTB, PB6);
-			}
-			else {
-				// within range
-				CLEAR_BIT(PORTB, PB6);
-			}
-
 			// blink temperature
 			blink(data[2]);
 
