@@ -22,32 +22,35 @@
 
   Uses LED for blinking
  */
+
+void blink_digit(uint8_t digit) {
+	uint8_t i;
+	if(digit == 0) {
+		digit += 10;
+	}
+	
+	for(i = 0; i < digit; i++) {
+		SET_BIT(PORTB,LED);
+		_delay_ms(100);
+
+		CLEAR_BIT(PORTB,LED);
+		_delay_ms(400);
+	}
+}
+
 void blink(uint8_t number) {
-	uint8_t i = 0;
 	if(number < 10 || number > 100) {
 		SET_BIT(PORTB, LED);
 		_delay_ms(1000);
 	}
 
 	// blink first digit
-	for(i = 0; i < (number / 10) % 10; i++) {
-		SET_BIT(PORTB,LED);
-		_delay_ms(100);
-
-		CLEAR_BIT(PORTB,LED);
-		_delay_ms(400);
-	}
+	blink_digit((number / 10) % 10);
 
 	_delay_ms(1000);
 
 	// blink second digit
-	for(i = 0; i < (number % 10); i++) {
-		SET_BIT(PORTB,LED);
-		_delay_ms(100);
-
-		CLEAR_BIT(PORTB,LED);
-		_delay_ms(400);
-	}
+	blink_digit(number % 10);
 }
 
 /*
@@ -79,14 +82,14 @@ main (void)
 				// within range
 				CLEAR_BIT(PORTB, PB6);
 			}
-			
+
 			// blink temperature
 			blink(data[2]);
 
 			SET_BIT(PORTB, PB6);
-			_delay_ms(100);
+			_delay_ms(300);
 			CLEAR_BIT(PORTB, PB6);
-			
+
 			// blink humidity
 			blink(data[0]);
 		} else {

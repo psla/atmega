@@ -12,7 +12,7 @@ void initDHT(void)
        1-2 seconds to get ready when first getting power, so we
        wait
      */
-    _delay_ms(2000);
+    _delay_ms(3000);
 }
 
 
