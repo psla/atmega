@@ -1,6 +1,8 @@
 #!/bin/bash
 codefile=$1
 
+set -e
+
 if [ "$1" == "" ]
 then
   echo "File not specified"
