@@ -1,4 +1,4 @@
-#define F_CPU 1000000UL
+#define F_CPU 8000000UL
 
 #include <avr/io.h>
 #include <util/delay.h>
@@ -13,6 +13,6 @@ main (void)
     {
         PORTB ^= _BV(PB0);
         PORTB ^= _BV(PB6);
-        _delay_ms(100);
+        _delay_ms(500);
     }
 }
