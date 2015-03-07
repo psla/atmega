@@ -11,10 +11,49 @@
 #define DHTLIB_ERROR_CHECKSUM 3
 #define DHTLIB_ERROR_TIMEOUT 4
 
+/**
+  Blinks a double digit number
+
+  It blinks first digit,
+  Pauses
+  Blinks the other digits.
+
+  If number outside of range, it makes one long blink
+
+  Uses LED for blinking
+ */
+void blink(uint8_t number) {
+	uint8_t i = 0;
+	if(number < 10 || number > 100) {
+		SET_BIT(PORTB, LED);
+		_delay_ms(1000);
+	}
+
+	// blink first digit
+	for(i = 0; i < (number / 10) % 10; i++) {
+		SET_BIT(PORTB,LED);
+		_delay_ms(100);
+
+		CLEAR_BIT(PORTB,LED);
+		_delay_ms(400);
+	}
+
+	_delay_ms(1000);
+
+	// blink second digit
+	for(i = 0; i < (number % 10); i++) {
+		SET_BIT(PORTB,LED);
+		_delay_ms(100);
+
+		CLEAR_BIT(PORTB,LED);
+		_delay_ms(400);
+	}
+}
+
 /*
    Connect two LEDs to PB0 and PB6, they will report temperature and humidity.
    Connect DHT11 to PB2
-   
+
    DHT library comes from https://github.com/goldsborough/AVR-DHT11
  */
 	int
@@ -27,7 +66,6 @@ main (void)
 	SET_BIT(PORTB, PB6);
 	initDHT();
 	uint8_t data [4];
-	int8_t i;
 
 	while(1) 
 	{
@@ -41,14 +79,16 @@ main (void)
 				// within range
 				CLEAR_BIT(PORTB, PB6);
 			}
-			for(i = 0; i < data[2]; i++)
-			{
-				SET_BIT(PORTB,LED);
-				_delay_ms(100);
+			
+			// blink temperature
+			blink(data[2]);
 
-				CLEAR_BIT(PORTB,LED);
-				_delay_ms(500);
-			}
+			SET_BIT(PORTB, PB6);
+			_delay_ms(100);
+			CLEAR_BIT(PORTB, PB6);
+			
+			// blink humidity
+			blink(data[0]);
 		} else {
 			// error, lit up red led
 			SET_BIT(PORTB,LED);
