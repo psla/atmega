@@ -14,6 +14,8 @@
 /*
    Connect two LEDs to PB0 and PB6, they will report temperature and humidity.
    Connect DHT11 to PB2
+   
+   DHT library comes from https://github.com/goldsborough/AVR-DHT11
  */
 	int
 main (void)
