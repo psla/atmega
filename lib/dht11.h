@@ -10,13 +10,8 @@
 
 #define LED PB0
 
-#define SET_BIT(byte, bit) ((byte) |= (1UL << (bit)))
-
-#define CLEAR_BIT(byte,bit) ((byte) &= ~(1UL << (bit)))
-
-#define IS_SET(byte,bit) (((byte) & (1UL << (bit))) >> (bit))
-
 #include <stdint.h>
+#include "common.h"
 
 void initDHT(void);
 

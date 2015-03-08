@@ -1,3 +1,5 @@
+#include "spi.h"
+
 void SPI_init(void){
 	// set up SPI output for Atmega 328P
 	// this means MOSI, SCK and SS!! (otherwise it won't work)
