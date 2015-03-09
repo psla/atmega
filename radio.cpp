@@ -44,16 +44,33 @@ int main (void) {
 	_delay_ms(500);
 
 	rfm69.initialize(RF69_915MHZ, NODEID, NETWORKID);
-
-	rfm69.encrypt(CRYPTPASS);
-	SET_BIT(PORTB, PB0);
 	CLEAR_BIT(PORTB, PB6);
-	rfm69.setPowerLevel(TXPOWER);
+	rfm69.encrypt(CRYPTPASS);
+	CLEAR_BIT(PORTB, PB0);
+
+	_delay_ms(500);
+	SET_BIT(PORTB, PB0);
 	SET_BIT(PORTB, PB6);
+
+	_delay_ms(500);
+
+	rfm69.setPowerLevel(TXPOWER);
+
+	CLEAR_BIT(PORTB, PB6);
 	
+	uint8_t counter = 0;
 	while(1)
 	{
-		SET_BIT(PORTB, PB0);
-		CLEAR_BIT(PORTB, PB6);
+		if(counter % 2 == 0) {
+			CLEAR_BIT(PORTB, PB0);
+			SET_BIT(PORTB, PB6);
+		} else {
+			CLEAR_BIT(PORTB, PB6);
+			SET_BIT(PORTB, PB0);
+		}
+
+		rfm69.send(1, (void *) &counter, 1, false);
+		_delay_ms(500);
+		counter++;
 	}
 }

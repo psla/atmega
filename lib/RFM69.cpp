@@ -90,9 +90,7 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
   CLEAR_BIT(PORTB, _slaveSelectPin);
   SPI_init();
 
-  CLEAR_BIT(PORTB, PB0);
   do writeReg(REG_SYNCVALUE1, 0xAA); while (readReg(REG_SYNCVALUE1) != 0xAA);
-  CLEAR_BIT(PORTB, PB6);
   do writeReg(REG_SYNCVALUE1, 0x55); while (readReg(REG_SYNCVALUE1) != 0x55);
 
   for (uint8_t i = 0; CONFIG[i][0] != 255; i++)
