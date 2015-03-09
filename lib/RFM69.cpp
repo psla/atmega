@@ -87,6 +87,9 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
     {255, 0}
   };
 
+  // in original code, this was SET_BIT
+  // maybe it was to activate internal pull-up resistor
+  // figure it out and maybe activate pull up resistor
   CLEAR_BIT(PORTB, _slaveSelectPin);
   SPI_init();
 
