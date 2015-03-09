@@ -87,11 +87,12 @@ bool RFM69::initialize(uint8_t freqBand, uint8_t nodeID, uint8_t networkID)
     {255, 0}
   };
 
-  DDRB |= _BV(_slaveSelectPin);
-  SET_BIT(PORTB, _slaveSelectPin);
+  CLEAR_BIT(PORTB, _slaveSelectPin);
   SPI_init();
 
+  CLEAR_BIT(PORTB, PB0);
   do writeReg(REG_SYNCVALUE1, 0xAA); while (readReg(REG_SYNCVALUE1) != 0xAA);
+  CLEAR_BIT(PORTB, PB6);
   do writeReg(REG_SYNCVALUE1, 0x55); while (readReg(REG_SYNCVALUE1) != 0x55);
 
   for (uint8_t i = 0; CONFIG[i][0] != 255; i++)
@@ -424,7 +425,6 @@ void RFM69::select() {
   // SPI.setBitOrder(MSBFIRST);
   // SPI.setClockDivider(SPI_CLOCK_DIV4); // decided to slow down from DIV2 after SPI stalling in some instances, especially visible on mega1284p when RFM69 and FLASH chip both present
   CLEAR_BIT(PORTB, _slaveSelectPin);
-  // digitalWrite(_slaveSelectPin, LOW);
 }
 
 // UNselect the transceiver chip

@@ -3,7 +3,7 @@
 void SPI_init(void){
 	// set up SPI output for Atmega 328P
 	// this means MOSI, SCK and SS!! (otherwise it won't work)
-	DDRB = ((1<<DDB2)|(1<<DDB3)|(1<<DDB5)); //spi pins on port b MOSI SCK,SS outputs
+	DDRB |= ((1<<DDB2)|(1<<DDB3)|(1<<DDB5)); //spi pins on port b MOSI SCK,SS outputs
 
 	// enable SPI, f/16
 	// SPR0 = f/16
@@ -18,7 +18,11 @@ void SPI_init(void){
 	
 	// enable SPI, f/8
 	// this is for 8MHz atmega
-	SPCR = ((1<<SPE)|(1<<MSTR)|(1<<SPR0)|(1<<SPI2X));
+	// SPE = SPI Enable
+	// MSTR = Master
+  	// SPR0 || SPI2x - speed divider 8
+	// SPCR = ((1<<SPE)|(1<<MSTR)|(1<<SPR0)|(1<<SPI2X));
+	SPCR = ((1<<SPE)|(1<<MSTR)|(1<<SPI2X));
 }
 
 char SPI_transmit(char cData){
