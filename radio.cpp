@@ -10,7 +10,7 @@
 #define NETWORKID 100
 #define TXPOWER 31
 
-RFM69 rfm69 = RFM69(isRFM69HW = true);
+RFM69 rfm69 = RFM69(PB2, PD2, true, 0);
 
 ISR(INT0_vect){
 	RFM69::isr0();
@@ -72,7 +72,7 @@ int main (void) {
 			SET_BIT(PORTB, PB0);
 		}
 
-		rfm69.send(1, (void *) &counter, 1, false);
+		rfm69.send(1, (const void *) &counter, 1, false);
 		_delay_ms(500);
 		counter++;
 	}
