@@ -5,12 +5,12 @@
 #include <avr/interrupt.h> 
 
 
-#define NODEID 1
+#define NODEID 2
 #define CRYPTPASS "0123456789012345"
 #define NETWORKID 100
 #define TXPOWER 31
 
-RFM69 rfm69;
+RFM69 rfm69 = RFM69(isRFM69HW = true);
 
 ISR(INT0_vect){
 	RFM69::isr0();
@@ -41,6 +41,9 @@ int main (void) {
 
 	SET_BIT(PORTB, PB0);
 	SET_BIT(PORTB, PB6);
+
+	// activate-pull-up resistor
+	SET_BIT(PORTB, PB2);
 	_delay_ms(500);
 
 	rfm69.initialize(RF69_915MHZ, NODEID, NETWORKID);
