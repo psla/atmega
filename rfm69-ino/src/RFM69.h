@@ -30,12 +30,7 @@
 // **********************************************************************************
 #ifndef RFM69_h
 #define RFM69_h
-
-#include <avr/io.h>
-#include "spi.h"
-#include "common.h"
-
-#define SS	PB2
+#include <Arduino.h>            // assumes Arduino IDE v1.0 or greater
 
 #define RF69_MAX_DATA_LEN       61 // to take advantage of the built in AES/CRC we want to limit the frame size to the internal FIFO size (66 bytes - 3 bytes overhead - 2 bytes crc)
 #define RF69_SPI_CS             SS // SS is the SPI slave select pin, for instance D10 on ATmega328
@@ -121,9 +116,9 @@ class RFM69 {
     uint8_t readReg(uint8_t addr);
     void writeReg(uint8_t addr, uint8_t val);
     void readAllRegs();
-    static void isr0();
 
   protected:
+    static void isr0();
     void virtual interruptHandler();
     void sendFrame(uint8_t toAddress, const void* buffer, uint8_t size, bool requestACK=false, bool sendACK=false);
 

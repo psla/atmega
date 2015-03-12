@@ -32,3 +32,6 @@
 *.swp
 *.swo
 *~
+
+# arduino build
+.build/
