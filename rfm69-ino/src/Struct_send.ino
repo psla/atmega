@@ -1,63 +1,69 @@
 #include "RFM69.h"
 #include <SPI.h>
+#include "dht11.h"
 
-#define NODEID      99
+#define NODEID      2
 #define NETWORKID   100
 #define GATEWAYID   1
 #define FREQUENCY   RF69_915MHZ //Match this with the version of your Moteino! (others: RF69_433MHZ, RF69_868MHZ)
+// TODO - deifne encryption
 #define KEY         0 //has to be same 16 characters/bytes on all nodes, not more not less!
 #define LED         8
-#define SERIAL_BAUD 115200
-#define ACK_TIME    30  // # of ms to wait for an ack
+// in case of failure of reading temperature from DHT11, how often should it retry reading
+#define RETRY_DELAY 2000
 
-int TRANSMITPERIOD = 300; //transmit a packet to gateway so often (in ms)
-byte sendSize=0;
-boolean requestACK = false;
+// how often new value of temperature should be measured
+#define POLL_DELAY 3000L
+
 RFM69 radio;
+uint8_t data [4];
 
 typedef struct {
-  int           nodeId; //store this nodeId
-  unsigned long uptime; //uptime in ms
-  float         temp;   //temperature maybe?
+	int           nodeId; //store this nodeId
+	uint8_t       temperature;   
+	uint8_t       humidity;   
+	// these two are most likely going to be 0, as DHT11 does not pass this info
+	uint8_t	temperature_decimal;
+	uint8_t	humidity_decimal;
 } Payload;
-Payload theData;
+Payload dataToBeSent;
 
 void setup() {
-  Blink(LED, 500);
-  radio.initialize(FREQUENCY,NODEID,NETWORKID);
-  Blink(LED, 500);
-  radio.setHighPower(); //uncomment only for RFM69HW!
-  radio.encrypt(KEY);
+	initDHT();
+	Blink(LED, 500);
+	radio.initialize(FREQUENCY,NODEID,NETWORKID);
+	Blink(LED, 500);
+	// radio.setHighPower(); //uncomment only for RFM69HW!
+	radio.encrypt(KEY);
+
+	dataToBeSent.nodeId = NODEID;
 }
 
-long lastPeriod = -1;
 void loop() {
-  //process any serial input
+	while(!fetchData(data)) { delay(RETRY_DELAY); }
 
-  //check for any received packets
+	//fill in the struct with new values
+	dataToBeSent.temperature = data[2];
+	dataToBeSent.temperature_decimal = data[3];
+	dataToBeSent.humidity = data[0]; //it's hot!
+	dataToBeSent.humidity_decimal = data[1]; //it's hot!
 
-  int currPeriod = millis()/TRANSMITPERIOD;
-  if (currPeriod != lastPeriod)
-  {
-    //fill in the struct with new values
-    theData.nodeId = NODEID;
-    theData.uptime = millis();
-    theData.temp = 91.23; //it's hot!
-    
-    if (radio.sendWithRetry(GATEWAYID, (const void*)(&theData), sizeof(theData)))
-	Blink(LED, 500);
-    else
-	Blink(LED, 1500);
-	
-    Blink(LED,3);
-    lastPeriod=currPeriod;
-  }
+	if (radio.sendWithRetry(GATEWAYID, (const void*)(&dataToBeSent), sizeof(dataToBeSent)))
+		Blink(LED, 500);
+	else
+		Blink(LED, 1500);
+
+	Blink(LED,3);
+
+	// temperature is measured, send it to master
+	delay(POLL_DELAY);
+	digitalWrite(LED,LOW);
 }
 
 void Blink(byte PIN, int DELAY_MS)
 {
-  pinMode(PIN, OUTPUT);
-  digitalWrite(PIN,HIGH);
-  delay(DELAY_MS);
-  digitalWrite(PIN,LOW);
+	pinMode(PIN, OUTPUT);
+	digitalWrite(PIN,HIGH);
+	delay(DELAY_MS);
+	digitalWrite(PIN,LOW);
 }
