@@ -1,6 +1,7 @@
 #include "RFM69.h"
 #include <SPI.h>
 #include "dht11.h"
+#include "LowPower.h"
 
 #define NODEID      2
 #define NETWORKID   100
@@ -63,7 +64,11 @@ void loop() {
 		blink_repeat(8);
 	digitalWrite(LED,LOW);
 
-	delay(POLL_DELAY);
+	radio.sleep();
+
+	for(int i = 0; i < 8; i++) {
+		LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+	}
 }
 
 void blink_repeat(uint8_t n) {
