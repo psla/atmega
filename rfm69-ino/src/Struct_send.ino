@@ -29,6 +29,7 @@ typedef struct {
 Payload dataToBeSent;
 
 void setup() {
+	blink_repeat(4);
 	initDHT();
 	Blink(LED, 500);
 	radio.initialize(FREQUENCY,NODEID,NETWORKID);
@@ -37,6 +38,8 @@ void setup() {
 	radio.encrypt(KEY);
 
 	dataToBeSent.nodeId = NODEID;
+       
+        blink_repeat(15);
 }
 
 void loop() {
@@ -49,9 +52,9 @@ void loop() {
 	dataToBeSent.humidity_decimal = data[1]; //it's hot!
 
 	if (radio.sendWithRetry(GATEWAYID, (const void*)(&dataToBeSent), sizeof(dataToBeSent)))
-		Blink(LED, 500);
+		blink_repeat(4);
 	else
-		Blink(LED, 1500);
+		blink_repeat(8);
 
 	Blink(LED,3);
 
@@ -60,6 +63,14 @@ void loop() {
 	digitalWrite(LED,LOW);
 }
 
+void blink_repeat(uint8_t n) {
+	for(uint8_t i = 0; i < n; i++) {
+		digitalWrite(LED,LOW);
+		delay(70);
+		digitalWrite(LED,HIGH);
+		delay(70);
+	}
+}
 void Blink(byte PIN, int DELAY_MS)
 {
 	pinMode(PIN, OUTPUT);
