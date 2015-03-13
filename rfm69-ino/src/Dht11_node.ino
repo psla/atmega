@@ -19,12 +19,12 @@ RFM69 radio;
 uint8_t data [4];
 
 typedef struct {
-	int           nodeId; //store this nodeId
-	uint8_t       temperature;   
-	uint8_t       humidity;   
+	uint8_t  nodeId; //store this nodeId
+	uint8_t  temperature;   
+	uint8_t  humidity;   
 	// these two are most likely going to be 0, as DHT11 does not pass this info
-	uint8_t	temperature_decimal;
-	uint8_t	humidity_decimal;
+	uint8_t	 temperature_decimal;
+	uint8_t	 humidity_decimal;
 } Payload;
 Payload dataToBeSent;
 
@@ -34,7 +34,8 @@ void setup() {
 	Blink(LED, 500);
 	radio.initialize(FREQUENCY,NODEID,NETWORKID);
 	Blink(LED, 500);
-	// radio.setHighPower(); //uncomment only for RFM69HW!
+
+	// radio.setHighPower(); //uncomment only for RFM69HW! but only if you want to use full power
 	radio.encrypt(KEY);
 
 	dataToBeSent.nodeId = NODEID;
@@ -43,24 +44,26 @@ void setup() {
 }
 
 void loop() {
+	// measure temperature
+	digitalWrite(LED, HIGH);
 	while(!fetchData(data)) { delay(RETRY_DELAY); }
+	digitalWrite(LED, LOW);
+	// temperature is measured, send it to master
 
 	//fill in the struct with new values
+	dataToBeSent.nodeId = NODEID;
 	dataToBeSent.temperature = data[2];
 	dataToBeSent.temperature_decimal = data[3];
-	dataToBeSent.humidity = data[0]; //it's hot!
-	dataToBeSent.humidity_decimal = data[1]; //it's hot!
+	dataToBeSent.humidity = data[0];
+	dataToBeSent.humidity_decimal = data[1]; 
 
 	if (radio.sendWithRetry(GATEWAYID, (const void*)(&dataToBeSent), sizeof(dataToBeSent)))
 		blink_repeat(4);
 	else
 		blink_repeat(8);
-
-	Blink(LED,3);
-
-	// temperature is measured, send it to master
-	delay(POLL_DELAY);
 	digitalWrite(LED,LOW);
+
+	delay(POLL_DELAY);
 }
 
 void blink_repeat(uint8_t n) {
@@ -71,6 +74,7 @@ void blink_repeat(uint8_t n) {
 		delay(70);
 	}
 }
+
 void Blink(byte PIN, int DELAY_MS)
 {
 	pinMode(PIN, OUTPUT);
