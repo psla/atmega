@@ -31,6 +31,8 @@ void blink(uint8_t number, volatile uint8_t* port, uint8_t pin) {
 	if(number < 10 || number > 100) {
 		SET_BIT(*(port), pin);
 		_delay_ms(1000);
+		CLEAR_BIT(*(port), pin);
+		return;
 	}
 
 	// blink first digit
