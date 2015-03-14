@@ -1,6 +1,6 @@
 #include "RFM69.h"
 #include <SPI.h>
-#include "dht11.h"
+#include "dht.h"
 #include "LowPower.h"
 
 #define NODEID      2
@@ -17,7 +17,7 @@
 #define POLL_DELAY 3000L
 
 RFM69 radio;
-uint8_t data [4];
+uint8_t dhtdata [4];
 
 typedef struct {
 	uint8_t  nodeId; //store this nodeId
@@ -47,16 +47,16 @@ void setup() {
 void loop() {
 	// measure temperature
 	digitalWrite(LED, HIGH);
-	while(!fetchData(data)) { delay(RETRY_DELAY); }
+	while(!fetchData(dhtdata)) { delay(RETRY_DELAY); }
 	digitalWrite(LED, LOW);
 	// temperature is measured, send it to master
 
 	//fill in the struct with new values
 	dataToBeSent.nodeId = NODEID;
-	dataToBeSent.temperature = data[2];
-	dataToBeSent.temperature_decimal = data[3];
-	dataToBeSent.humidity = data[0];
-	dataToBeSent.humidity_decimal = data[1]; 
+	dataToBeSent.temperature = dhtdata[2];
+	dataToBeSent.temperature_decimal = dhtdata[3];
+	dataToBeSent.humidity = dhtdata[0];
+	dataToBeSent.humidity_decimal = dhtdata[1]; 
 
 	if (radio.sendWithRetry(GATEWAYID, (const void*)(&dataToBeSent), sizeof(dataToBeSent)))
 		blink_repeat(4);

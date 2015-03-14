@@ -2,7 +2,7 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
-#include "lib/dht11.h"
+#include "lib/dht.h"
 #include "lib/blinker.h"
 
 
@@ -21,21 +21,21 @@ main (void)
 
 	SET_BIT(PORTB, PB6);
 	initDHT();
-	uint8_t data [4];
+	dht11data sensorData;
 
 	while(1) 
 	{
-		if(fetchData(data))
+		if(getDht11(&sensorData))
 		{
 			// blink temperature
-			blink(data[2], &PORTB, LED);
+			blink(sensorData.temperature, &PORTB, LED);
 
 			SET_BIT(PORTB, PB6);
 			_delay_ms(300);
 			CLEAR_BIT(PORTB, PB6);
 
 			// blink humidity
-			blink(data[0], &PORTB, LED);
+			blink(sensorData.humidity, &PORTB, LED);
 		} else {
 			// error, lit up red led
 			SET_BIT(PORTB,LED);
