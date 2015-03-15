@@ -60,12 +60,13 @@ void loop() {
 		blink_repeat(8);
 	digitalWrite(LED,LOW);
 
-	//radio.sleep();
+	radio.sleep();
 
-	//for(int i = 0; i < 8; i++) {
-	//	LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
-	//}
-	delay(30000L);
+	// every 15 seconds for now
+	for(int i = 0; i < 2; i++) {
+		LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+	}
+	// delay(30000L);
 }
 
 void blink_repeat(uint8_t n) {
