@@ -42,10 +42,24 @@ typedef struct slider_state_t {
   uint8_t remaining_steps;
 } slider_state_t;
 
+
+/// Drive as long as you can in direction
+/// until you reach (any) side
+void drive(uint8_t direction)
+{
+    if(direction) {
+      /// TODO: move right
+    } else {
+      /// TODO: move left
+    }
+}
+
 int
 main (void)
 {
     DDRB |= _BV(LED_DDB);
+
+    
 
     while(1)
     {
