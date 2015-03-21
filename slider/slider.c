@@ -6,16 +6,17 @@
 
 // TODO: Figure story for unit tests. cppUnit? uCNit? 
 
-#define BUTTON_PIN PB0
-#define LED_PIN PB1
-#define LED_DDB DDB1
+#define BUTTON1_PIN PB0
+#define BUTTON2_PIN PB1
+#define LED_PIN PB2
+#define LED_DDB DDB2
 
 /// Switch on the left and right. High indicates that slider is on this side.
 /// This means, that platform is in the middle if both are "LOW"
 /// (this way we can preserve energy - most of the time slider will be
 /// driving from left to right, so having current flowing (even small current) is excessive)
-#define LEFT_SWITCH PB2
-#define RIGHT_SWITCH PB3
+#define LEFT_SWITCH PB3
+#define RIGHT_SWITCH PB4
 
 // Fill this in. This is number of motor rotations per entire slide from side to side
 // This way we will know how many moves per picture to take
@@ -27,6 +28,7 @@
 
 #define STATE_SLIDING 0
 #define STATE_PROGRAMMING 1
+
 typedef struct slider_state_t {
   /// direction is 1 when slider is moving right
   /// and 0, when slider is moving left
@@ -52,10 +54,46 @@ typedef struct slider_state_t {
   ///
   /// This number can be used to trigger buzzer (when it reaches zero)
   /// But you can continue going forward and taking pictures until you reach the other end of the slider
-  uint8_t remaining_steps;
+  uint16_t remaining_steps;
 } slider_state_t;
 
+/// Setting time of the slide
+#define PROGRAMMING_STATE_TIME 0
+
+/// Setting how long exposure should be
+/// If using mirror lockup, it should at least be 2.5 seconds
+/// Reasonable range from 0.5 - 30 second (though thirty means a long time :))
+/// In some situations, using short stops is fine too.
+#define PROGRAMMING_STATE_EXPOSURE_TIME 1
+
+/// Setting number of pictures for the slide
+/// or should I rather set interval? (I can display both, number of pictures impacts interval)
+#define PROGRAMMING_STATE_PICTURES 2
+
+/// Setting direction of the slide, "Change direction: YES/NO"
+#define PROGRAMMING_STATE_DIRECTION 3
+
+/// YES/NO "start timelapse", if no, go back to PROGRAMMING_STATE_TIME
+#define PROGRAMMING_STATE_START 4
+
+typedef struct programming_state_t {
+  /// Defied in PROGRAMMING_STATE_... 
+  /// state of programming
+  uint8_t state;
+
+  /// how many pictures to take
+  uint16_t total_number_of_pictures;
+
+  /// how long a total timelapse time should be
+  uint16_t total_time_in_minutes;
+
+  /// what's the exposure time in tens of secons (how long platform should be stopped)
+  /// 10 means 1 second, 250 means 25 seconds, 5 means 500 ms (0.5 seconds)
+  uint8_t exposure_time_in_tens_of_second;
+} programming_state_t;
+
 slider_state_t slider_state;
+programming_state_t programming_state;
 
 /// Drive as long as you can in direction
 /// until you reach (any) side
@@ -106,6 +144,30 @@ uint8_t update_direction_based_on_platform_position()
 }
 
 void handle_programming() {
+  // TODO: double buttons clicked - consider doing calibration
+  // TODO: calculate number of pictures and exposure time and see if you can move fast enough between points
+  // (for instance, 1 second for 10 steps might be enough, but 1 seconds for 100 steps won't)
+  // to start with, ensure there is at least 2 seconds interval to move platform
+
+  switch(programming_state.state) {
+    case PROGRAMMING_STATE_TIME:
+      if(debounce_read(PORTB, BUTTON2_PIN)) {
+        // maximum 600 minutes, minimum 10
+        programming_state.total_time_in_minutes = (programming_state.total_time_in_minutes + 10) % 600;
+        if(programming_state.total_time_in_minutes == 0) {
+          programming_state.total_time_in_minutes += 10;
+        }
+
+        // read for the button to go down
+        // alternatively, support hold in the future (60 clicks to loop through right now..)
+        // or use potentiometer
+        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+      }
+      if(debounce_read(PORTB, BUTTON1_PIN)) {
+        programming_state.state = PROGRAMMING_STATE_PICTURES;
+      }
+      break;
+  }
 }
 
 void handle_sliding() {
