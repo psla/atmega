@@ -25,6 +25,8 @@
 #define DIRECTION_RIGHT 1
 #define DIRECTION_LEFT 0
 
+#define STATE_SLIDING 0
+#define STATE_PROGRAMMING 1
 typedef struct slider_state_t {
   /// direction is 1 when slider is moving right
   /// and 0, when slider is moving left
@@ -70,6 +72,20 @@ void drive(uint8_t direction)
     }
 }
 
+/// Performs a debounced read of high
+/// this means that if it ever sees 0, it will return 0
+/// but to see 1, it will need to see 1 few times
+/// This method is actively blocking
+uint8_t debounce_read(uint8_t port, uint8_t pin) {
+  uint8_t retry;
+  for(retry = 0; retry < 8; retry++) {
+    if(IS_SET(port, pin) == 0) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
 /// Verifies the platform position
 /// if platform is on the side, update a direction for the next sliding direction
 /// and return 1
@@ -89,6 +105,12 @@ uint8_t update_direction_based_on_platform_position()
   return 0;
 }
 
+void handle_programming() {
+}
+
+void handle_sliding() {
+}
+
 int
 main (void)
 {
@@ -101,9 +123,18 @@ main (void)
       slider_state.direction = DIRECTION_RIGHT;
     }
 
+    uint8_t state = STATE_PROGRAMMING;
+
     while(1)
     {
-      // we have just started go to programming mode
-
+      // we have just started, go to programming mode
+      switch(state) {
+        case STATE_SLIDING:
+          handle_sliding();
+          break;
+        case STATE_PROGRAMMING:
+          handle_programming();
+          break;
+      }
     }
 }
