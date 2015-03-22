@@ -103,7 +103,7 @@ programming_state_t programming_state = {0};
 // this is a global state of the slider.
 // it can be STATE_PROGRAMMING
 // or STATE_SLIDING
-uint8_t state = STATE_PROGRAMMING
+uint8_t state = STATE_PROGRAMMING;
 
 /// Drive as long as you can in direction
 /// until you reach (any) side
