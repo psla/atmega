@@ -9,8 +9,8 @@
 
 #define BUTTON1_PIN PB0
 #define BUTTON2_PIN PB1
-#define LED_PIN PB2
-#define LED_DDB DDB2
+#define CAMERA_PIN PB2
+#define CAMERA_DDB DDB2
 
 /// Switch on the left and right. High indicates that slider is on this side.
 /// This means, that platform is in the middle if both are "LOW"
@@ -24,9 +24,6 @@
 // To determine this, run "motor test" and it will return (on screen) a number to put in here
 // TODO: persist data on arduino eprom
 #define ROTATIONS_PER_SLIDER 1000
-#define DIRECTION_RIGHT 1
-#define DIRECTION_LEFT 0
-
 
 slider_state_t slider_state = {0};
 programming_state_t programming_state = {0};
@@ -100,9 +97,9 @@ void handle_programming() {
     case PROGRAMMING_STATE_TIME:
       if(debounce_read(PORTB, BUTTON2_PIN)) {
         // maximum 600 minutes, minimum 10
-        programming_state.total_time_in_minutes = (programming_state.total_time_in_minutes + 10) % 600;
-        if(programming_state.total_time_in_minutes == 0) {
-          programming_state.total_time_in_minutes += 10;
+        programming_state.total_time_in_minutes = programming_state.total_time_in_minutes + 10;
+        if(programming_state.total_time_in_minutes > 600) {
+          programming_state.total_time_in_minutes = 10;
         }
 
         // read for the button to go up
@@ -118,8 +115,8 @@ void handle_programming() {
 
     case PROGRAMMING_STATE_EXPOSURE_TIME:
       if(debounce_read(PORTB, BUTTON2_PIN)) {
-        if(programming_state.exposure_time_in_tens_of_second < 10) 
-          programming_state.exposure_time_in_tens_of_second += 0.2;
+        if(programming_state.exposure_time_in_tens_of_second < 10)
+          programming_state.exposure_time_in_tens_of_second += 2;
         else
           programming_state.exposure_time_in_tens_of_second += 10;
 
@@ -197,17 +194,46 @@ void handle_programming() {
         while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
       }
       break;
-      break;
   }
 }
 
+void take_picture() {
+    uint8_t counter = programming_state.exposure_time_in_tens_of_second;
+
+    SET_BIT(PORTB, CAMERA_PIN);
+
+    for(; counter > 0; --counter) {
+      _delay_ms(100);
+    }
+
+    CLEAR_BIT(PORTB, CAMERA_PIN);
+}
+
 void handle_sliding() {
+  // TODO: one of the buttons should be interrupt button that would stop sliding
+  uint8_t done = 0;
+  while(done == 0) {
+
+    take_picture();
+
+    // move to new position
+    // but also count time (as the slider moves, it is part of the interval
+    // between pictures)
+
+
+    // otherwise go and take pictures!!
+    done = 
+      (slider_state.direction == DIRECTION_RIGHT && IS_SET(PORTB, RIGHT_SWITCH))
+      || (slider_state.direction == DIRECTION_LEFT && IS_SET(PORTB, LEFT_SWITCH));
+  }
+
+  state = STATE_PROGRAMMING;
 }
 
 int
 main (void)
 {
-    DDRB |= _BV(LED_DDB);
+    DDRB |= _BV(CAMERA_DDB);
 
     // see position of the platform and if not on the side, go to the side
     // this operation is synchronous which means that it blocks UI / screen while the motor is moving

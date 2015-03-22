@@ -1,3 +1,3 @@
 #!/bin/bash
 
-avr-gcc -mmcu=atmega328p -Wall -Os slider.c
+avr-gcc -mmcu=atmega328p -Wall -Os slider.c stepper.c

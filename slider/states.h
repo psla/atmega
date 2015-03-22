@@ -24,6 +24,9 @@
 /// YES/NO "start timelapse", if no, go back to PROGRAMMING_STATE_TIME
 #define PROGRAMMING_STATE_START 4
 
+#define DIRECTION_RIGHT 1
+#define DIRECTION_LEFT 0
+
 typedef struct slider_state_t {
   /// direction is 1 when slider is moving right
   /// and 0, when slider is moving left
