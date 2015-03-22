@@ -3,6 +3,7 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "../lib/common.h"
+#include "states.h"
 
 // TODO: Figure story for unit tests. cppUnit? uCNit? 
 
@@ -26,76 +27,6 @@
 #define DIRECTION_RIGHT 1
 #define DIRECTION_LEFT 0
 
-#define STATE_SLIDING 0
-#define STATE_PROGRAMMING 1
-
-typedef struct slider_state_t {
-  /// direction is 1 when slider is moving right
-  /// and 0, when slider is moving left
-  /// it should always reflect a desired direction of the next step
-  /// (as opposed to the direction of the last step that took place)
-  /// this means that at the end of slide, you can switch it to opposite
-  uint8_t direction;
-
-  /// Number of rotations to make per step.
-  /// In other words, number of stepper motor steps to take between two pictures
-  /// This must be positive number
-  uint8_t speed;
-
-  /// Contains number of remaining pictures to take
-  /// This is also an estimate of remaining steps till the other end of the slider
-  /// (note that this might not be accurate, you might finish too early
-  /// or too late, depending on quality of the stepper motor)
-  /// Code and hardware will prevent 'too late' stops.
-  ///
-  /// Remaining steps is initially set to ROTATIONS_PER_SLIDER / speed
-  /// as long as speed is constant
-  /// TODO: in future we might want to consider variable speed of the motor
-  ///
-  /// This number can be used to trigger buzzer (when it reaches zero)
-  /// But you can continue going forward and taking pictures until you reach the other end of the slider
-  uint16_t remaining_steps;
-} slider_state_t;
-
-/// Setting time of the slide
-#define PROGRAMMING_STATE_TIME 0
-
-/// Setting how long exposure should be
-/// If using mirror lockup, it should at least be 2.5 seconds
-/// Reasonable range from 0.5 - 30 second (though thirty means a long time :))
-/// In some situations, using short stops is fine too.
-#define PROGRAMMING_STATE_EXPOSURE_TIME 1
-
-/// (or should I rather set time - but one defines another)
-#define PROGRAMMING_STATE_PICTURES 2
-
-/// Setting direction of the slide, "Change direction: YES/NO"
-/// if no, go to next step, if yes, change direction and ask again
-#define PROGRAMMING_STATE_DIRECTION 3
-
-/// YES/NO "start timelapse", if no, go back to PROGRAMMING_STATE_TIME
-#define PROGRAMMING_STATE_START 4
-
-typedef struct programming_state_t {
-  /// Defied in PROGRAMMING_STATE_...
-  /// state of programming
-  uint8_t state;
-
-  /// how many pictures to take
-  uint16_t total_number_of_pictures;
-
-  /// how long a total timelapse time should be
-  uint16_t total_time_in_minutes;
-
-  /// what's the exposure time in tens of secons (how long platform should be stopped)
-  /// 10 means 1 second, 250 means 25 seconds, 5 means 500 ms (0.5 seconds)
-  uint8_t exposure_time_in_tens_of_second;
-
-  /// current state of yes/no answer;
-  /// 1 = yes
-  /// 0 = no
-  uint8_t yes_no;
-} programming_state_t;
 
 slider_state_t slider_state = {0};
 programming_state_t programming_state = {0};
