@@ -3,7 +3,9 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "../lib/common.h"
+#include "../lib/millis.h"
 #include "states.h"
+#include "stepper.h"
 
 // TODO: Figure story for unit tests. cppUnit? uCNit? 
 
@@ -187,6 +189,10 @@ void handle_programming() {
           // the answer is "yes", change the direction (and move the platform), 
           // go back to question with state no
           programming_state.yes_no = 0;
+
+          // set up sliding state
+          slider_state.remaining_steps = programming_state.total_number_of_pictures;
+          slider_state.speed = ROTATIONS_PER_SLIDER / programming_state.total_number_of_pictures;
           state = STATE_SLIDING;
         }
 
@@ -212,9 +218,26 @@ void take_picture() {
 void handle_sliding() {
   // TODO: one of the buttons should be interrupt button that would stop sliding
   uint8_t done = 0;
+  uint8_t repeat_wait;
   while(done == 0) {
 
     take_picture();
+
+    // yes, this could go to negative numbers
+    // well, remaining steps is an uint, so it can go to very high numbers actually
+    --slider_state.remaining_steps;
+
+    millis_reset();
+
+    step(slider_state.direction, slider_state.speed);
+
+    unsigned long passed_time = millis_get();
+
+    // this is constant in a run (rotation of specific degree will take always
+    // same amount of time)
+    // we must now wait remaining time
+    repeat_wait = programming_state.exposure_time_in_tens_of_second - (passed_time / 100);
+    for(; repeat_wait >= 0; --repeat_wait) _delay_ms(100);
 
     // move to new position
     // but also count time (as the slider moves, it is part of the interval
@@ -234,6 +257,8 @@ int
 main (void)
 {
     DDRB |= _BV(CAMERA_DDB);
+
+    millis_init();
 
     // see position of the platform and if not on the side, go to the side
     // this operation is synchronous which means that it blocks UI / screen while the motor is moving
