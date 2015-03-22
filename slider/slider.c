@@ -100,6 +100,11 @@ typedef struct programming_state_t {
 slider_state_t slider_state = {0};
 programming_state_t programming_state = {0};
 
+// this is a global state of the slider.
+// it can be STATE_PROGRAMMING
+// or STATE_SLIDING
+uint8_t state = STATE_PROGRAMMING;
+
 /// Drive as long as you can in direction
 /// until you reach (any) side
 void drive(uint8_t direction)
@@ -239,6 +244,29 @@ void handle_programming() {
         while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
       }
       break;
+   case PROGRAMMING_STATE_START:
+      // change YES/NO answer
+      if(debounce_read(PORTB, BUTTON1_PIN)) {
+        programming_state.yes_no ^= 1;
+        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+      }
+
+      if(debounce_read(PORTB, BUTTON1_PIN)) {
+        if(programming_state.yes_no == 0) {
+          // the answer is no, go to the first question
+          programming_state.state = PROGRAMMING_STATE_TIME;
+        } else {
+          // the answer is "yes", change the direction (and move the platform), 
+          // go back to question with state no
+          programming_state.yes_no = 0;
+          state = STATE_SLIDING;
+        }
+
+        // wait for the button to go up
+        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
+      }
+      break;
+      break;
   }
 }
 
@@ -256,7 +284,6 @@ main (void)
       drive(DIRECTION_LEFT);
     }
 
-    uint8_t state = STATE_PROGRAMMING;
 
     while(1)
     {
