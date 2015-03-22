@@ -1,5 +1,3 @@
-#define F_CPU 8000000UL
-
 #include <avr/io.h>
 #include <util/delay.h>
 #include "../lib/common.h"
@@ -24,8 +22,8 @@
 // Fill this in. This is number of motor rotations per entire slide from side to side
 // This way we will know how many moves per picture to take
 // To determine this, run "motor test" and it will return (on screen) a number to put in here
-// TODO: persist data on arduino eprom
-#define ROTATIONS_PER_SLIDER 1000
+// TODO: persist data on atmega eprom
+#define STEPS_PER_SLIDER 10000
 
 slider_state_t slider_state = {0};
 programming_state_t programming_state = {0};
@@ -192,7 +190,7 @@ void handle_programming() {
 
           // set up sliding state
           slider_state.remaining_steps = programming_state.total_number_of_pictures;
-          slider_state.speed = ROTATIONS_PER_SLIDER / programming_state.total_number_of_pictures;
+          slider_state.speed = STEPS_PER_SLIDER / programming_state.total_number_of_pictures;
           state = STATE_SLIDING;
         }
 
@@ -265,7 +263,6 @@ main (void)
     if(!update_direction_based_on_platform_position()) {
       drive(DIRECTION_LEFT);
     }
-
 
     while(1)
     {
