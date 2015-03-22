@@ -90,10 +90,15 @@ typedef struct programming_state_t {
   /// what's the exposure time in tens of secons (how long platform should be stopped)
   /// 10 means 1 second, 250 means 25 seconds, 5 means 500 ms (0.5 seconds)
   uint8_t exposure_time_in_tens_of_second;
+
+  /// current state of yes/no answer;
+  /// 1 = yes
+  /// 0 = no
+  uint8_t yes_no;
 } programming_state_t;
 
-slider_state_t slider_state;
-programming_state_t programming_state;
+slider_state_t slider_state = {0};
+programming_state_t programming_state = {0};
 
 /// Drive as long as you can in direction
 /// until you reach (any) side
@@ -107,6 +112,12 @@ void drive(uint8_t direction)
       while(!IS_SET(PORTB, LEFT_SWITCH)) {
         // move left
       }
+    }
+
+    if(direction == DIRECTION_LEFT) {
+      slider_state.direction = DIRECTION_RIGHT;
+    } else {
+      slider_state.direction = DIRECTION_LEFT;
     }
 }
 
@@ -171,8 +182,7 @@ void handle_programming() {
 
     case PROGRAMMING_STATE_EXPOSURE_TIME:
       if(debounce_read(PORTB, BUTTON2_PIN)) {
-        // this will compute 
-        if(exposure_time_in_tens_of_second < 10) 
+        if(programming_state.exposure_time_in_tens_of_second < 10) 
           programming_state.exposure_time_in_tens_of_second += 0.2;
         else
           programming_state.exposure_time_in_tens_of_second += 10;
@@ -193,7 +203,7 @@ void handle_programming() {
     case PROGRAMMING_STATE_PICTURES:
       if(debounce_read(PORTB, BUTTON2_PIN)) {
         programming_state.total_number_of_pictures += 50;
-        if(programming_state.total_number_of_pictures > 1500) {
+        if(programming_state.total_number_of_pictures > 1000) {
           programming_state.total_number_of_pictures = 50;
         }
 
@@ -205,6 +215,29 @@ void handle_programming() {
         while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
       }
 
+      break;
+   case PROGRAMMING_STATE_DIRECTION:
+      // change YES/NO answer
+      if(debounce_read(PORTB, BUTTON1_PIN)) {
+        programming_state.yes_no ^= 1;
+        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+      }
+
+      // "continue" button pressed, see if the answer is yes or no
+      if(debounce_read(PORTB, BUTTON1_PIN)) {
+        if(programming_state.yes_no == 0) {
+          // the answer is no, go to the next question
+          programming_state.state = PROGRAMMING_STATE_START;
+        } else {
+          // the answer is "yes", change the direction (and move the platform), 
+          // go back to question with state no
+          programming_state.yes_no = 0;
+          drive(slider_state.direction);
+        }
+
+        // wait for the button to go up
+        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
+      }
       break;
   }
 }
@@ -221,7 +254,6 @@ main (void)
     // this operation is synchronous which means that it blocks UI / screen while the motor is moving
     if(!update_direction_based_on_platform_position()) {
       drive(DIRECTION_LEFT);
-      slider_state.direction = DIRECTION_RIGHT;
     }
 
     uint8_t state = STATE_PROGRAMMING;
