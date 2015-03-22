@@ -158,14 +158,35 @@ void handle_programming() {
           programming_state.total_time_in_minutes += 10;
         }
 
-        // read for the button to go down
+        // read for the button to go up
         // alternatively, support hold in the future (60 clicks to loop through right now..)
         // or use potentiometer
         while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
       }
       if(debounce_read(PORTB, BUTTON1_PIN)) {
+        programming_state.state = PROGRAMMING_STATE_EXPOSURE_TIME;
+      }
+      break;
+
+    case PROGRAMMING_STATE_EXPOSURE_TIME:
+      if(debounce_read(PORTB, BUTTON2_PIN)) {
+        // this will compute 
+        if(exposure_time_in_tens_of_second < 10) 
+          programming_state.exposure_time_in_tens_of_second += 0.2;
+        else
+          programming_state.exposure_time_in_tens_of_second += 10;
+
+        if(programming_state.exposure_time_in_tens_of_second > 300)
+          programming_state.exposure_time_in_tens_of_second = 0;
+
+        // while for the button to go up
+        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+      }
+
+      if(debounce_read(PORTB, BUTTON1_PIN)) {
         programming_state.state = PROGRAMMING_STATE_PICTURES;
       }
+
       break;
   }
 }
