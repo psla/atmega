@@ -66,18 +66,18 @@ typedef struct slider_state_t {
 /// In some situations, using short stops is fine too.
 #define PROGRAMMING_STATE_EXPOSURE_TIME 1
 
-/// Setting number of pictures for the slide
-/// or should I rather set interval? (I can display both, number of pictures impacts interval)
+/// (or should I rather set time - but one defines another)
 #define PROGRAMMING_STATE_PICTURES 2
 
 /// Setting direction of the slide, "Change direction: YES/NO"
+/// if no, go to next step, if yes, change direction and ask again
 #define PROGRAMMING_STATE_DIRECTION 3
 
 /// YES/NO "start timelapse", if no, go back to PROGRAMMING_STATE_TIME
 #define PROGRAMMING_STATE_START 4
 
 typedef struct programming_state_t {
-  /// Defied in PROGRAMMING_STATE_... 
+  /// Defied in PROGRAMMING_STATE_...
   /// state of programming
   uint8_t state;
 
@@ -165,6 +165,7 @@ void handle_programming() {
       }
       if(debounce_read(PORTB, BUTTON1_PIN)) {
         programming_state.state = PROGRAMMING_STATE_EXPOSURE_TIME;
+        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
       }
       break;
 
@@ -185,6 +186,23 @@ void handle_programming() {
 
       if(debounce_read(PORTB, BUTTON1_PIN)) {
         programming_state.state = PROGRAMMING_STATE_PICTURES;
+        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
+      }
+
+      break;
+    case PROGRAMMING_STATE_PICTURES:
+      if(debounce_read(PORTB, BUTTON2_PIN)) {
+        programming_state.total_number_of_pictures += 50;
+        if(programming_state.total_number_of_pictures > 1500) {
+          programming_state.total_number_of_pictures = 50;
+        }
+
+        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+      }
+
+      if(debounce_read(PORTB, BUTTON1_PIN)) {
+        programming_state.state = PROGRAMMING_STATE_DIRECTION;
+        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
       }
 
       break;
