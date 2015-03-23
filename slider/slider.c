@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include <util/delay.h>
+#include "../lib/lcd.h"
 #include "../lib/common.h"
 #include "../lib/millis.h"
 #include "states.h"
@@ -87,6 +88,21 @@ uint8_t update_direction_based_on_platform_position()
   return 0;
 }
 
+/// prints time of the slide
+void print_total_time() {
+  lcd_clrscr();
+
+  lcd_puts("Time in minutes: ");
+
+  // maximum supported number has 4 digits
+  // put a divider as appropriate power of 10 to represent the longest supported number
+  uint16_t divider = 1000L;
+  while(divider != 0) {
+    lcd_putc((programming_state.total_time_in_minutes / divider) % 10 + '0');
+    divider /= 10;
+  }
+}
+
 void handle_programming() {
   // TODO: double buttons clicked - consider doing calibration
   // TODO: calculate number of pictures and exposure time and see if you can move fast enough between points
@@ -101,6 +117,8 @@ void handle_programming() {
         if(programming_state.total_time_in_minutes > 600) {
           programming_state.total_time_in_minutes = 10;
         }
+
+        print_total_time();
 
         // read for the button to go up
         // alternatively, support hold in the future (60 clicks to loop through right now..)
