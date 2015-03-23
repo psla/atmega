@@ -12,8 +12,6 @@
 #include <util/atomic.h>
 #include "millis.h"
 
-#define F_CPU 8000000UL
-
 #ifndef F_CPU
 	#error "F_CPU not defined!"
 #endif
