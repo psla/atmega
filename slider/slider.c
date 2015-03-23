@@ -88,19 +88,56 @@ uint8_t update_direction_based_on_platform_position()
   return 0;
 }
 
-/// prints time of the slide
-void print_total_time() {
-  lcd_clrscr();
-
-  lcd_puts("Time in minutes: ");
-
+/// Prints a non-negative integer in current position of the screen
+/// It will contain 4 digits, and will start with leading zeroes.
+void print_uint16(uint16_t number) {
   // maximum supported number has 4 digits
   // put a divider as appropriate power of 10 to represent the longest supported number
   uint16_t divider = 1000L;
   while(divider != 0) {
-    lcd_putc((programming_state.total_time_in_minutes / divider) % 10 + '0');
+    lcd_putc((number / divider) % 10 + '0');
     divider /= 10;
   }
+}
+
+/// Prints a non-negative integer in current position of the screen,
+/// It will contain 3 digits
+void print_uint8(uint8_t number) {
+  // maximum supported number has 4 digits
+  // put a divider as appropriate power of 10 to represent the longest supported number
+  uint16_t divider = 100L;
+  while(divider != 0) {
+    lcd_putc((number / divider) % 10 + '0');
+    divider /= 10;
+  }
+}
+
+/// prints time of the slide
+void print_total_time() {
+  lcd_clrscr();
+
+  lcd_puts("Sliding time:\n");
+  print_uint16(programming_state.total_time_in_minutes);
+  lcd_puts(" [min]");
+  // TODO: consider formatting as x h xx min (or x:xx)
+}
+
+void print_exposure_time() {
+  lcd_clrscr();
+  lcd_puts("Exposure time:\n");
+
+  print_uint8(programming_state.exposure_time_in_tens_of_second / 10);
+  lcd_putc('.');
+  lcd_putc(programming_state.exposure_time_in_tens_of_second % 10 + '0');
+
+  lcd_puts(" [s]");
+}
+
+void print_pictures_count() {
+  lcd_clrscr();
+
+  lcd_puts("Pictures to take:\n");
+  print_uint16(programming_state.total_number_of_pictures);
 }
 
 void handle_programming() {
@@ -141,6 +178,8 @@ void handle_programming() {
         if(programming_state.exposure_time_in_tens_of_second > 300)
           programming_state.exposure_time_in_tens_of_second = 0;
 
+        print_exposure_time();
+
         // while for the button to go up
         while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
       }
@@ -157,6 +196,8 @@ void handle_programming() {
         if(programming_state.total_number_of_pictures > 1000) {
           programming_state.total_number_of_pictures = 50;
         }
+
+        print_pictures_count();
 
         while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
       }
