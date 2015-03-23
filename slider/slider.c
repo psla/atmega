@@ -122,6 +122,13 @@ void print_total_time() {
   // TODO: consider formatting as x h xx min (or x:xx)
 }
 
+void print_sliding_state() {
+  lcd_clrscr();
+  lcd_puts("Remaining picts:\n");
+  print_uint16(slider_state.remaining_steps);
+  // TODO: maybe print remaining time?
+}
+
 void print_exposure_time() {
   lcd_clrscr();
   lcd_puts("Exposure time:\n");
@@ -136,7 +143,7 @@ void print_exposure_time() {
 void print_pictures_count() {
   lcd_clrscr();
 
-  lcd_puts("Pictures to take:\n");
+  lcd_puts("Pictures to take\n");
   print_uint16(programming_state.total_number_of_pictures);
 }
 
@@ -287,8 +294,9 @@ void handle_sliding() {
   // TODO: one of the buttons should be interrupt button that would stop sliding
   uint8_t done = 0;
   uint8_t repeat_wait;
-  while(done == 0) {
+  print_sliding_state();
 
+  while(done == 0) {
     take_picture();
 
     // yes, this could go to negative numbers
@@ -296,6 +304,8 @@ void handle_sliding() {
     --slider_state.remaining_steps;
 
     millis_reset();
+
+    print_sliding_state();
 
     step(slider_state.direction, slider_state.speed);
 
