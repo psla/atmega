@@ -212,6 +212,12 @@ void handle_programming() {
       // change YES/NO answer
       if(debounce_read(PORTB, BUTTON1_PIN)) {
         programming_state.yes_no ^= 1;
+        // TODO: instead, we have two buttons ready.
+        // Just use one as a yes, and other one as a no
+        lcd_clrscr();
+        lcd_puts("Change direction: ");
+        lcd_putc(programming_state.yes_no + '0');
+
         while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
       }
 
@@ -235,6 +241,11 @@ void handle_programming() {
       // change YES/NO answer
       if(debounce_read(PORTB, BUTTON1_PIN)) {
         programming_state.yes_no ^= 1;
+
+        lcd_clrscr();
+        lcd_puts("Start sliding: ");
+        lcd_putc(programming_state.yes_no + '0');
+
         while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
       }
 
