@@ -16,7 +16,7 @@
 // how often new value of temperature should be measured
 #define POLL_DELAY 3000L
 
-RFM69 radio;
+RFM69 radio(RF69_SPI_CS, RF69_IRQ_PIN, true, RF69_IRQ_NUM);
 dht22data sensorData;
 
 
@@ -34,7 +34,7 @@ void setup() {
 	radio.initialize(FREQUENCY,NODEID,NETWORKID);
 	Blink(LED, 500);
 
-	// radio.setHighPower(); //uncomment only for RFM69HW! but only if you want to use full power
+	radio.setHighPower(); //uncomment only for RFM69HW! but only if you want to use full power
 	radio.encrypt(KEY);
 
 	dataToBeSent.nodeId = NODEID;
@@ -55,7 +55,7 @@ void loop() {
 	dataToBeSent.humidity = sensorData.humidity;
 
 	if (radio.sendWithRetry(GATEWAYID, (const void*)(&dataToBeSent), sizeof(dataToBeSent)))
-		blink_repeat(4);
+		blink_repeat(1);
 	else
 		blink_repeat(8);
 	digitalWrite(LED,LOW);
@@ -71,10 +71,10 @@ void loop() {
 
 void blink_repeat(uint8_t n) {
 	for(uint8_t i = 0; i < n; i++) {
-		digitalWrite(LED,LOW);
-		delay(70);
-		digitalWrite(LED,HIGH);
-		delay(70);
+		digitalWrite(LED, LOW);
+		delay(150);
+		digitalWrite(LED, HIGH);
+		delay(150);
 	}
 }
 
