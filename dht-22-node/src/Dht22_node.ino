@@ -44,9 +44,11 @@ void setup() {
 
 void loop() {
 	// measure temperature
-	digitalWrite(LED, HIGH);
-	while(!getDht22(&sensorData)) { delay(RETRY_DELAY); }
-	digitalWrite(LED, LOW);
+	while(!getDht22(&sensorData)) { 
+		digitalWrite(LED, HIGH);
+		delay(RETRY_DELAY);
+		digitalWrite(LED, LOW);
+	}
 
 	// temperature is measured, send it to master
 	// fill in the struct with new values
@@ -66,13 +68,12 @@ void loop() {
 	for(int i = 0; i < 2; i++) {
 		LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 	}
-	// delay(30000L);
 }
 
 void blink_repeat(uint8_t n) {
 	for(uint8_t i = 0; i < n; i++) {
 		digitalWrite(LED, LOW);
-		delay(150);
+		delay(350);
 		digitalWrite(LED, HIGH);
 		delay(150);
 	}
