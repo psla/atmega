@@ -35,3 +35,7 @@
 
 # arduino build
 .build/
+
+# Atmel Studio
+[Dd]ebug/
+*.atsuo
