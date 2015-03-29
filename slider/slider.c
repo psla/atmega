@@ -7,11 +7,18 @@
 #include "stepper.h"
 
 // TODO: Figure story for unit tests. cppUnit? uCNit? 
-
+#define BUTTON1_PORT PORTB
+#define BUTTON1_READ PINB
 #define BUTTON1_PIN PB0
-#define BUTTON2_PIN PB1
-#define CAMERA_PIN PB2
+#define BUTTON2_PIN PB2
+#define CAMERA_PIN PB3
 #define CAMERA_DDB DDB2
+
+// when button is pressed it will be either HIGH or LOW
+// currently I am using built-in pull-up resistor and connected button to GND
+// so low-level indicates button is pressed
+#define BUTTON_PRESSED_LEVEL 0
+#define BUTTON_NOT_PRESSED_LEVEL 1
 
 /// Switch on the left and right. High indicates that slider is on this side.
 /// This means, that platform is in the middle if both are "LOW"
@@ -62,12 +69,12 @@ void drive(uint8_t direction)
 uint8_t debounce_read(uint8_t port, uint8_t pin) {
   uint8_t retry;
   for(retry = 0; retry < 8; retry++) {
-    if(IS_SET(port, pin) == 0) {
-      return 0;
+    if(IS_SET(port, pin) == BUTTON_NOT_PRESSED_LEVEL) {
+      return BUTTON_NOT_PRESSED_LEVEL;
     }
   }
 
-  return 1;
+  return BUTTON_PRESSED_LEVEL;
 }
 /// Verifies the platform position
 /// if platform is on the side, update a direction for the next sliding direction
@@ -116,7 +123,8 @@ void print_uint8(uint8_t number) {
 void print_total_time() {
   lcd_clrscr();
 
-  lcd_puts("Sliding time:\n");
+  lcd_puts("Sliding time:");
+  lcd_set_cursor(1, 0);
   print_uint16(programming_state.total_time_in_minutes);
   lcd_puts(" [min]");
   // TODO: consider formatting as x h xx min (or x:xx)
@@ -124,15 +132,16 @@ void print_total_time() {
 
 void print_sliding_state() {
   lcd_clrscr();
-  lcd_puts("Remaining picts:\n");
+  lcd_puts("Remaining picts:");
+  lcd_set_cursor(1, 0);
   print_uint16(slider_state.remaining_steps);
   // TODO: maybe print remaining time?
 }
 
 void print_exposure_time() {
   lcd_clrscr();
-  lcd_puts("Exposure time:\n");
-
+  lcd_puts("Exposure time:");
+  lcd_set_cursor(1, 0);
   print_uint8(programming_state.exposure_time_in_tens_of_second / 10);
   lcd_putc('.');
   lcd_putc(programming_state.exposure_time_in_tens_of_second % 10 + '0');
@@ -143,8 +152,23 @@ void print_exposure_time() {
 void print_pictures_count() {
   lcd_clrscr();
 
-  lcd_puts("Pictures to take\n");
+  lcd_puts("Pictures to take:");
+  lcd_set_cursor(1, 0);
   print_uint16(programming_state.total_number_of_pictures);
+}
+
+void print_change_direction() {
+	lcd_clrscr();
+	lcd_puts("Change direction");
+	lcd_set_cursor(1, 0);
+	lcd_putc(programming_state.yes_no + '0');
+}
+
+void print_start_sliding() {
+	lcd_clrscr();
+	lcd_puts("Start sliding");
+	lcd_set_cursor(1, 0);
+	lcd_putc(programming_state.yes_no + '0');
 }
 
 void handle_programming() {
@@ -152,13 +176,9 @@ void handle_programming() {
   // TODO: calculate number of pictures and exposure time and see if you can move fast enough between points
   // (for instance, 1 second for 10 steps might be enough, but 1 seconds for 100 steps won't)
   // to start with, ensure there is at least 2 seconds interval to move platform
-  lcd_puts("Programming");
-  while(1);
-
   switch(programming_state.state) {
     case PROGRAMMING_STATE_TIME:
-      print_total_time();
-      if(debounce_read(PORTB, BUTTON2_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
         // maximum 600 minutes, minimum 10
         programming_state.total_time_in_minutes = programming_state.total_time_in_minutes + 10;
         if(programming_state.total_time_in_minutes > 600) {
@@ -170,16 +190,19 @@ void handle_programming() {
         // read for the button to go up
         // alternatively, support hold in the future (60 clicks to loop through right now..)
         // or use potentiometer
-        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+        while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
-      if(debounce_read(PORTB, BUTTON1_PIN)) {
+	  
+      if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
         programming_state.state = PROGRAMMING_STATE_EXPOSURE_TIME;
-        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
+		print_exposure_time();
+		
+		while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
       break;
 
     case PROGRAMMING_STATE_EXPOSURE_TIME:
-      if(debounce_read(PORTB, BUTTON2_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
         if(programming_state.exposure_time_in_tens_of_second < 10)
           programming_state.exposure_time_in_tens_of_second += 2;
         else
@@ -191,17 +214,18 @@ void handle_programming() {
         print_exposure_time();
 
         // while for the button to go up
-        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+        while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
 
-      if(debounce_read(PORTB, BUTTON1_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
         programming_state.state = PROGRAMMING_STATE_PICTURES;
-        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
+		print_pictures_count();
+        while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
 
       break;
     case PROGRAMMING_STATE_PICTURES:
-      if(debounce_read(PORTB, BUTTON2_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
         programming_state.total_number_of_pictures += 50;
         if(programming_state.total_number_of_pictures > 1000) {
           programming_state.total_number_of_pictures = 50;
@@ -209,33 +233,33 @@ void handle_programming() {
 
         print_pictures_count();
 
-        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+        while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
 
-      if(debounce_read(PORTB, BUTTON1_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
         programming_state.state = PROGRAMMING_STATE_DIRECTION;
-        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
+		print_change_direction();
+        while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
 
       break;
    case PROGRAMMING_STATE_DIRECTION:
       // change YES/NO answer
-      if(debounce_read(PORTB, BUTTON1_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
         programming_state.yes_no ^= 1;
         // TODO: instead, we have two buttons ready.
         // Just use one as a yes, and other one as a no
-        lcd_clrscr();
-        lcd_puts("Change direction: ");
-        lcd_putc(programming_state.yes_no + '0');
+        print_change_direction();
 
-        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+        while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
 
       // "continue" button pressed, see if the answer is yes or no
-      if(debounce_read(PORTB, BUTTON1_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
         if(programming_state.yes_no == 0) {
           // the answer is no, go to the next question
           programming_state.state = PROGRAMMING_STATE_START;
+		  print_start_sliding();
         } else {
           // the answer is "yes", change the direction (and move the platform), 
           // go back to question with state no
@@ -244,25 +268,24 @@ void handle_programming() {
         }
 
         // wait for the button to go up
-        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
+        while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
       break;
    case PROGRAMMING_STATE_START:
       // change YES/NO answer
-      if(debounce_read(PORTB, BUTTON1_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
         programming_state.yes_no ^= 1;
 
-        lcd_clrscr();
-        lcd_puts("Start sliding: ");
-        lcd_putc(programming_state.yes_no + '0');
+		print_start_sliding();
 
-        while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
+        while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL);
       }
 
-      if(debounce_read(PORTB, BUTTON1_PIN)) {
+      if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
         if(programming_state.yes_no == 0) {
           // the answer is no, go to the first question
           programming_state.state = PROGRAMMING_STATE_TIME;
+		  print_total_time();
         } else {
           // the answer is "yes", change the direction (and move the platform), 
           // go back to question with state no
@@ -275,10 +298,11 @@ void handle_programming() {
         }
 
         // wait for the button to go up
-        while(debounce_read(PORTB, BUTTON1_PIN) != 0) ;
+        while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
       }
       break;
   }
+  _delay_ms(100);
 }
 
 void take_picture() {
@@ -337,16 +361,25 @@ void handle_sliding() {
 int
 main (void)
 {
-    // TODO: camera requires two pins (focus and shutter(
-	// DDRB |= _BV(CAMERA_DDB);
+    // TODO: camera requires two pins (focus and shutter)
+	// DDRB |= _BV(BUTTON1_PIN);
+	// DDRB |= _BV(BUTTON2_PIN);
+	DDRB |= _BV(PB1);
+	
+	// enable pull-up resistor for button
+	BUTTON1_PORT |= 1 << BUTTON1_PIN;
+	BUTTON1_PORT |= 1 << BUTTON2_PIN;
 
     millis_init();
 	lcd_init();
 	lcd_on();
 	lcd_clear();
 	lcd_return_home();
+
+	lcd_puts("Welcome...");
+	print_total_time();
 	
-    // see position of the platform and if not on the side, go to the side
+	// see position of the platform and if not on the side, go to the side
     // this operation is synchronous which means that it blocks UI / screen while the motor is moving
     //if(!update_direction_based_on_platform_position()) {
 	  // I do not have motor just yet, comment it out
