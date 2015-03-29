@@ -377,7 +377,6 @@ main (void)
 	lcd_return_home();
 
 	lcd_puts("Welcome...");
-	print_total_time();
 	
 	// see position of the platform and if not on the side, go to the side
     // this operation is synchronous which means that it blocks UI / screen while the motor is moving
@@ -386,7 +385,13 @@ main (void)
       // drive(DIRECTION_LEFT);
     //}
 
-    while(1)
+	// set initial values
+	programming_state.exposure_time_in_tens_of_second = 10;
+	programming_state.total_time_in_minutes = 30;
+	programming_state.total_number_of_pictures = 300;
+    print_total_time();
+    
+	while(1)
     {
       // we have just started, go to programming mode
       switch(state) {
