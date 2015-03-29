@@ -340,18 +340,20 @@ main (void)
     // DDRB |= _BV(CAMERA_DDB);
 
     // millis_init();
-	lcd_init(LCD_DISP_ON_BLINK);
-	lcd_clrscr();
-	lcd_home();
-	lcd_gotoxy(1,1);
-	// lcd_init();
-	// lcd_on();
-	// lcd_clear();
-	// lcd_return_home();
-	// lcd_set_cursor(1, 1);
-	// lcd_putc('a');
+	// lcd_init(LCD_DISP_ON_BLINK);
+	// lcd_clrscr();
+	// lcd_home();
+	// lcd_gotoxy(1,1);
+	
+	lcd_init();
+	lcd_on();
+	lcd_clear();
+	lcd_return_home();
+	lcd_set_cursor(0, 0);
 	lcd_puts("Line 1");
-	// lcd_puts("Line 2");
+	lcd_set_cursor(0, 1);
+	// lcd_putc('a');
+	lcd_puts("Line 2");
 		       
 	while(1) {
 			
