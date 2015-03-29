@@ -1,3 +1,11 @@
+// This code was originally taken form
+// https://github.com/aostanin/avr-hd44780
+// and further optimized to
+// 1. ignore RW pin (connect RW to ground) and remove
+//    reference about RW 
+// 2. support "putc"
+// 3. make it explicit that pins for the data bus must be next to each other
+
 #pragma once
 
 #include <avr/io.h>
@@ -9,6 +17,12 @@
 #define LCD_RS 7
 #define LCD_EN 6
 #define LCD_D0 2
+// note, D1, D2, D3 are ignored, they must follow
+// D0 (if D0 is Px0, then they have to be Px1, Px2, Px3
+// if D0 is Px2, then they have to be Px3, Px4, Px5
+// also, this library currently does not allow you to use other pins
+// on the port where you connected screen
+// and given that it was optimized to use 6 pins, you are losing 2 pins. TODO
 #define LCD_D1 3
 #define LCD_D2 4
 #define LCD_D3 5
@@ -82,3 +96,6 @@ void lcd_set_cursor(uint8_t row, uint8_t col);
 
 void lcd_puts(char *string);
 void lcd_printf(char *format, ...);
+
+#define lcd_putc lcd_write
+#define lcd_clrscr lcd_clear

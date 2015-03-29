@@ -95,7 +95,7 @@ void print_uint16(uint16_t number) {
   // put a divider as appropriate power of 10 to represent the longest supported number
   uint16_t divider = 1000L;
   while(divider != 0) {
-    //lcd_putc((number / divider) % 10 + '0');
+    lcd_putc((number / divider) % 10 + '0');
     divider /= 10;
   }
 }
@@ -107,14 +107,14 @@ void print_uint8(uint8_t number) {
   // put a divider as appropriate power of 10 to represent the longest supported number
   uint16_t divider = 100L;
   while(divider != 0) {
-    //lcd_putc((number / divider) % 10 + '0');
+    lcd_putc((number / divider) % 10 + '0');
     divider /= 10;
   }
 }
 
 /// prints time of the slide
 void print_total_time() {
-  //lcd_clrscr();
+  lcd_clrscr();
 
   lcd_puts("Sliding time:\n");
   print_uint16(programming_state.total_time_in_minutes);
@@ -123,25 +123,25 @@ void print_total_time() {
 }
 
 void print_sliding_state() {
-  // lcd_clrscr();
-  // lcd_puts("Remaining picts:\n");
+  lcd_clrscr();
+  lcd_puts("Remaining picts:\n");
   print_uint16(slider_state.remaining_steps);
   // TODO: maybe print remaining time?
 }
 
 void print_exposure_time() {
-  // lcd_clrscr();
+  lcd_clrscr();
   lcd_puts("Exposure time:\n");
 
   print_uint8(programming_state.exposure_time_in_tens_of_second / 10);
-  // lcd_putc('.');
-  // lcd_putc(programming_state.exposure_time_in_tens_of_second % 10 + '0');
+  lcd_putc('.');
+  lcd_putc(programming_state.exposure_time_in_tens_of_second % 10 + '0');
 
   lcd_puts(" [s]");
 }
 
 void print_pictures_count() {
-  // lcd_clrscr();
+  lcd_clrscr();
 
   lcd_puts("Pictures to take\n");
   print_uint16(programming_state.total_number_of_pictures);
@@ -224,9 +224,9 @@ void handle_programming() {
         programming_state.yes_no ^= 1;
         // TODO: instead, we have two buttons ready.
         // Just use one as a yes, and other one as a no
-        // lcd_clrscr();
+        lcd_clrscr();
         lcd_puts("Change direction: ");
-        // lcd_putc(programming_state.yes_no + '0');
+        lcd_putc(programming_state.yes_no + '0');
 
         while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
       }
@@ -252,9 +252,9 @@ void handle_programming() {
       if(debounce_read(PORTB, BUTTON1_PIN)) {
         programming_state.yes_no ^= 1;
 
-        // lcd_clrscr();
+        lcd_clrscr();
         lcd_puts("Start sliding: ");
-        // lcd_putc(programming_state.yes_no + '0');
+        lcd_putc(programming_state.yes_no + '0');
 
         while(debounce_read(PORTB, BUTTON2_PIN) != 0) ;
       }
@@ -337,27 +337,15 @@ void handle_sliding() {
 int
 main (void)
 {
-    // DDRB |= _BV(CAMERA_DDB);
+    // TODO: camera requires two pins (focus and shutter(
+	// DDRB |= _BV(CAMERA_DDB);
 
-    // millis_init();
-	// lcd_init(LCD_DISP_ON_BLINK);
-	// lcd_clrscr();
-	// lcd_home();
-	// lcd_gotoxy(1,1);
-	
+    millis_init();
 	lcd_init();
 	lcd_on();
 	lcd_clear();
 	lcd_return_home();
-	lcd_set_cursor(0, 0);
-	lcd_puts("Line 1");
-	lcd_set_cursor(0, 1);
-	// lcd_putc('a');
-	lcd_puts("Line 2");
-		       
-	while(1) {
-			
-	}
+	
     // see position of the platform and if not on the side, go to the side
     // this operation is synchronous which means that it blocks UI / screen while the motor is moving
     //if(!update_direction_based_on_platform_position()) {
