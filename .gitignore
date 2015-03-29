@@ -38,4 +38,5 @@
 
 # Atmel Studio
 [Dd]ebug/
+[Rr]elease/
 *.atsuo
