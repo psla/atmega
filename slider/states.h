@@ -53,6 +53,11 @@ typedef struct slider_state_t {
   /// This number can be used to trigger buzzer (when it reaches zero)
   /// But you can continue going forward and taking pictures until you reach the other end of the slider
   uint16_t remaining_steps;
+  
+  /// How many seconds between two pictures
+  /// ('exposure_time_int_tens_of_seconds' represents how long the shutter button will be pressed,
+  /// while this field represents how much time between two pictures has to pass)
+  uint16_t tens_of_seconds_between_pictures;
 } slider_state_t;
 
 typedef struct programming_state_t {

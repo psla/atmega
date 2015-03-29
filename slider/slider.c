@@ -11,7 +11,8 @@
 #define BUTTON1_READ PINB
 #define BUTTON1_PIN PB0
 #define BUTTON2_PIN PB2
-#define CAMERA_PIN PB3
+#define CAMERA_SHUTTER_PIN PB1
+#define CAMERA_FOCUS_PIN PB3
 #define CAMERA_DDB DDB2
 
 // when button is pressed it will be either HIGH or LOW
@@ -292,6 +293,8 @@ void handle_programming() {
           programming_state.yes_no = 0;
 
           // set up sliding state
+		  // this is a rough estimate of seconds between pictures
+		  slider_state.tens_of_seconds_between_pictures = programming_state.total_time_in_minutes *10L * 60L / programming_state.total_number_of_pictures;
           slider_state.remaining_steps = programming_state.total_number_of_pictures;
           slider_state.speed = STEPS_PER_SLIDER / programming_state.total_number_of_pictures;
           state = STATE_SLIDING;
@@ -308,13 +311,24 @@ void handle_programming() {
 void take_picture() {
     uint8_t counter = programming_state.exposure_time_in_tens_of_second;
 
-    SET_BIT(PORTB, CAMERA_PIN);
-
+	// set focus
+    SET_BIT(PORTB, CAMERA_FOCUS_PIN);
+	
+	// trigger shutter after 30ms since focus (even on manual focus, 
+	// they cannot be pressed together)
+	_delay_ms(30);
+	
+    SET_BIT(PORTB, CAMERA_SHUTTER_PIN);
+	
+	// keep shutter pressed for exposure time time.
+	// this usually would not matter, unless running in manual mode
+	// or time priority
     for(; counter > 0; --counter) {
       _delay_ms(100);
     }
 
-    CLEAR_BIT(PORTB, CAMERA_PIN);
+    CLEAR_BIT(PORTB, CAMERA_FOCUS_PIN);
+	CLEAR_BIT(PORTB, CAMERA_SHUTTER_PIN);
 }
 
 void handle_sliding() {
@@ -341,8 +355,16 @@ void handle_sliding() {
     // this is constant in a run (rotation of specific degree will take always
     // same amount of time)
     // we must now wait remaining time
-    repeat_wait = programming_state.exposure_time_in_tens_of_second - (passed_time / 100);
-    for(; repeat_wait >= 0; --repeat_wait) _delay_ms(100);
+    repeat_wait = slider_state.tens_of_seconds_between_pictures - (passed_time / 100);
+    for(; repeat_wait > 0; --repeat_wait) {
+		if(repeat_wait % 10 == 0) {
+			lcd_set_cursor(1, 9);
+			print_uint8((repeat_wait / 10));
+			lcd_puts(" [s]");
+		}
+		
+		_delay_ms(100);
+	}
 
     // move to new position
     // but also count time (as the slider moves, it is part of the interval
