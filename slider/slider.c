@@ -12,7 +12,7 @@
 #define BUTTON1_PIN PB0
 #define BUTTON2_PIN PB2
 #define CAMERA_SHUTTER_PIN PB1
-#define CAMERA_FOCUS_PIN PB3
+#define CAMERA_FOCUS_PIN PB4
 #define CAMERA_DDB DDB2
 
 // when button is pressed it will be either HIGH or LOW
@@ -21,12 +21,19 @@
 #define BUTTON_PRESSED_LEVEL 0
 #define BUTTON_NOT_PRESSED_LEVEL 1
 
+// LEFT or RIGHT switch is active on following level
+// this means that platform is on the side of the slider
+#define SWITCH_ACTIVE 0
+
+// inactive means that platform is in the middle of slide
+#define SWITCH_INACTIVE 1
+
 /// Switch on the left and right. High indicates that slider is on this side.
 /// This means, that platform is in the middle if both are "LOW"
 /// (this way we can preserve energy - most of the time slider will be
 /// driving from left to right, so having current flowing (even small current) is excessive)
 #define LEFT_SWITCH PB3
-#define RIGHT_SWITCH PB4
+#define RIGHT_SWITCH PB3
 
 // Fill this in. This is number of motor rotations per entire slide from side to side
 // This way we will know how many moves per picture to take
@@ -47,11 +54,11 @@ uint8_t state = STATE_PROGRAMMING;
 void drive(uint8_t direction)
 {
     if(direction) {
-      while(!IS_SET(PORTB, RIGHT_SWITCH))  {
+      while(IS_SET(PINB, RIGHT_SWITCH) == SWITCH_INACTIVE)  {
         // move right
       }
     } else {
-      while(!IS_SET(PORTB, LEFT_SWITCH)) {
+      while(IS_SET(PINB, LEFT_SWITCH) == SWITCH_INACTIVE) {
         // move left
       }
     }
@@ -83,12 +90,12 @@ uint8_t debounce_read(uint8_t port, uint8_t pin) {
 /// otherwise do nothing and return 0
 uint8_t update_direction_based_on_platform_position()
 {
-  if(IS_SET(PORTB, LEFT_SWITCH)) {
+  if(IS_SET(PINB, LEFT_SWITCH) == SWITCH_ACTIVE) {
     slider_state.direction = DIRECTION_RIGHT;
     return 1;
   }
 
-  if(IS_SET(PORTB, RIGHT_SWITCH)) {
+  if(IS_SET(PINB, RIGHT_SWITCH) == SWITCH_ACTIVE) {
     slider_state.direction = DIRECTION_LEFT;
     return 1;
   }
@@ -265,7 +272,17 @@ void handle_programming() {
           // the answer is "yes", change the direction (and move the platform), 
           // go back to question with state no
           programming_state.yes_no = 0;
+		  lcd_set_cursor(1, 0);
+		  lcd_puts("Going ");
+		  
+		  if(slider_state.direction == DIRECTION_LEFT) {
+			  lcd_puts("LEFT");
+		  } else {
+			  lcd_puts("RIGHT");
+		  }
+		  
           drive(slider_state.direction);
+		  print_change_direction();
         }
 
         // wait for the button to go up
@@ -373,11 +390,12 @@ void handle_sliding() {
 
     // otherwise go and take pictures!!
     done = 
-      (slider_state.direction == DIRECTION_RIGHT && IS_SET(PORTB, RIGHT_SWITCH))
-      || (slider_state.direction == DIRECTION_LEFT && IS_SET(PORTB, LEFT_SWITCH));
+      (slider_state.direction == DIRECTION_RIGHT && (IS_SET(PINB, RIGHT_SWITCH) == SWITCH_ACTIVE))
+      || (slider_state.direction == DIRECTION_LEFT && (IS_SET(PINB, LEFT_SWITCH) == SWITCH_ACTIVE));
   }
 
   state = STATE_PROGRAMMING;
+  print_total_time();
 }
 
 int
@@ -391,7 +409,11 @@ main (void)
 	// enable pull-up resistor for button
 	BUTTON1_PORT |= 1 << BUTTON1_PIN;
 	BUTTON1_PORT |= 1 << BUTTON2_PIN;
-
+	
+	// pull-up resistor for LEFT | RIGHT reed switch (connect it to GND)
+	BUTTON1_PORT |= 1 << LEFT_SWITCH;
+	BUTTON1_PORT |= 1 << RIGHT_SWITCH;
+	
     millis_init();
 	lcd_init();
 	lcd_on();
@@ -402,10 +424,12 @@ main (void)
 	
 	// see position of the platform and if not on the side, go to the side
     // this operation is synchronous which means that it blocks UI / screen while the motor is moving
-    //if(!update_direction_based_on_platform_position()) {
+    if(!update_direction_based_on_platform_position()) {
 	  // I do not have motor just yet, comment it out
-      // drive(DIRECTION_LEFT);
-    //}
+	  lcd_set_cursor(1, 0);
+	  lcd_puts("Going LEFT");
+      drive(DIRECTION_LEFT);
+    }
 
 	// set initial values
 	programming_state.exposure_time_in_tens_of_second = 10;
