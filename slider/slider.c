@@ -209,7 +209,7 @@ void print_sliding_state() {
 		lcd_puts("Remaining picts:");
 		lcd_set_cursor(1, 0);
 		print_uint16(slider_state.remaining_steps);
-	} else {
+		} else {
 		lcd_puts("Over pictures:");
 		lcd_set_cursor(1, 0);
 		print_uint16(slider_state.over_pictures);
@@ -241,8 +241,7 @@ void print_pictures_count() {
 void print_change_direction() {
 	lcd_clrscr();
 	lcd_puts("Change direction");
-	lcd_set_cursor(1, 0);
-	lcd_putc(programming_state.yes_no + '0');
+	print_yes_no();
 }
 
 void print_start_sliding() {
@@ -358,40 +357,34 @@ void handle_programming() {
 
 		break;
 		case PROGRAMMING_STATE_DIRECTION:
-		// change YES/NO answer
+		// No button?
+		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+			// the answer is no, go to the next question
+			change_programming_state(PROGRAMMING_STATE_START);
+			
+			// and wait for the button to go up
+			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+		}
+		
+		// Yes button?
 		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
-			programming_state.yes_no ^= 1;
-			// TODO: instead, we have two buttons ready.
-			// Just use one as a yes, and other one as a no
+			// the answer is "yes", change the direction (and move the platform),
+			// go back to question with state no
+			lcd_clrscr();
+			lcd_set_cursor(1, 0);
+			lcd_puts("Going ");
+			
+			if(slider_state.direction == DIRECTION_LEFT) {
+				lcd_puts("LEFT");
+				} else {
+				lcd_puts("RIGHT");
+			}
+			
+			drive(slider_state.direction);
 			print_change_direction();
 
-			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
-		}
-
-		// "continue" button pressed, see if the answer is yes or no
-		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
-			if(programming_state.yes_no == 0) {
-				// the answer is no, go to the next question
-				change_programming_state(PROGRAMMING_STATE_START);
-				} else {
-				// the answer is "yes", change the direction (and move the platform),
-				// go back to question with state no
-				programming_state.yes_no = 0;
-				lcd_set_cursor(1, 0);
-				lcd_puts("Going ");
-				
-				if(slider_state.direction == DIRECTION_LEFT) {
-					lcd_puts("LEFT");
-					} else {
-					lcd_puts("RIGHT");
-				}
-				
-				drive(slider_state.direction);
-				print_change_direction();
-			}
-
 			// wait for the button to go up
-			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		break;
 		case PROGRAMMING_STATE_START:
@@ -403,10 +396,6 @@ void handle_programming() {
 			// wait for button to go up
 			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL);
 			
-			// the answer is "yes", change the direction (and move the platform),
-			// go back to question with state no
-			programming_state.yes_no = 0;
-
 			// set up sliding state
 			// this is a rough estimate of seconds between pictures
 			slider_state.tens_of_seconds_between_pictures = (programming_state.total_time_in_minutes *10L * 60L / programming_state.total_number_of_pictures)
@@ -439,23 +428,23 @@ void handle_programming() {
 		}
 		break;
 		case PROGRAMMING_CALIBRATION:
-			// YES
-			if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
-				lcd_clrscr();
-				lcd_puts("Calibrating...");
-				
-				while(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
-				
-				calibrate();
-				
-				change_programming_state(PROGRAMMING_STATE_TIME);
-			}
+		// YES
+		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+			lcd_clrscr();
+			lcd_puts("Calibrating...");
 			
-			// NO
-			if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
-				change_programming_state(PROGRAMMING_STATE_TIME);
-				while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
-			}
+			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+			
+			calibrate();
+			
+			change_programming_state(PROGRAMMING_STATE_TIME);
+		}
+		
+		// NO
+		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+			change_programming_state(PROGRAMMING_STATE_TIME);
+			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+		}
 		break;
 	}
 	_delay_ms(100);
@@ -497,7 +486,7 @@ void handle_sliding() {
 		// well, remaining steps is an uint, so it can go to very high numbers actually
 		if(slider_state.remaining_steps > 0) {
 			--slider_state.remaining_steps;
-		} else {
+			} else {
 			++slider_state.over_pictures;
 		}
 

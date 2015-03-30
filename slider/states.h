@@ -83,11 +83,6 @@ typedef struct programming_state_t {
   /// what's the exposure time in tens of secons (how long platform should be stopped)
   /// 10 means 1 second, 250 means 25 seconds, 5 means 500 ms (0.5 seconds)
   uint8_t exposure_time_in_tens_of_second;
-
-  /// current state of yes/no answer;
-  /// 1 = yes
-  /// 0 = no
-  uint8_t yes_no;
 } programming_state_t;
 
 #endif
