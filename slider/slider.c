@@ -5,6 +5,7 @@
 #include "../lib/millis.h"
 #include "states.h"
 #include "stepper.h"
+#include "slider_memory.h"
 
 // TODO: Figure story for unit tests. cppUnit? uCNit?
 #define BUTTON1_PORT PORTB
@@ -35,12 +36,6 @@
 #define LEFT_SWITCH PB3
 #define RIGHT_SWITCH PB3
 
-// Fill this in. This is number of motor rotations per entire slide from side to side
-// This way we will know how many moves per picture to take
-// To determine this, run "motor test" and it will return (on screen) a number to put in here
-// TODO: persist data on atmega eprom
-#define STEPS_PER_SLIDER 10000
-
 slider_state_t slider_state = {0};
 programming_state_t programming_state = {0};
 
@@ -49,17 +44,77 @@ programming_state_t programming_state = {0};
 // or STATE_SLIDING
 uint8_t state = STATE_PROGRAMMING;
 
+uint16_t steps_per_slider = 0;
+
+// declarations:
+uint8_t debounce_read(uint8_t port, uint8_t pin);
+uint16_t drive(uint8_t direction);
+void print_change_direction();
+void print_uint16(uint16_t number);
+void print_uint16_custom(uint16_t number, uint16_t divider);
+
+
+void print_yes_no() {
+	lcd_set_cursor(1, 0);
+	lcd_puts("NO          YES");
+}
+
+void calibrate() {
+	lcd_clrscr();
+	lcd_puts("Calibrating...");
+	lcd_set_cursor(1, 0);
+	lcd_puts("Going left");
+	drive(DIRECTION_LEFT);
+	lcd_clrscr();
+	lcd_puts("Calibrating");
+	lcd_set_cursor(1, 0);
+	lcd_puts("Going right");
+	_delay_ms(2000);
+	uint16_t steps = drive(DIRECTION_RIGHT);
+	lcd_clrscr();
+	lcd_puts("Steps: ");
+	print_uint16_custom(steps, 10000L);
+	print_yes_no();
+	
+	// read update
+	for(;;)
+	{
+		// no:
+		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+			return;
+		}
+		
+		// yes:
+		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+			set_steps_per_slide(steps);
+			return;
+		}
+	}
+}
+
 /// Drive as long as you can in direction
 /// until you reach (any) side
-void drive(uint8_t direction)
+/// reports number of steps
+uint16_t drive(uint8_t direction)
 {
+	uint16_t steps = 0;
 	if(direction) {
 		while(IS_SET(PINB, RIGHT_SWITCH) == SWITCH_INACTIVE)  {
 			// move right
+			++steps;
+			
+			//TODO: take step
+			_delay_ms(5);
 		}
 		} else {
 		while(IS_SET(PINB, LEFT_SWITCH) == SWITCH_INACTIVE) {
 			// move left
+			++steps;
+			
+			//TODO: take step
+			_delay_ms(5);
 		}
 	}
 
@@ -68,6 +123,8 @@ void drive(uint8_t direction)
 		} else {
 		slider_state.direction = DIRECTION_LEFT;
 	}
+	
+	return steps;
 }
 
 /// Performs a debounced read of high
@@ -104,15 +161,22 @@ uint8_t update_direction_based_on_platform_position()
 }
 
 /// Prints a non-negative integer in current position of the screen
-/// It will contain 4 digits, and will start with leading zeroes.
-void print_uint16(uint16_t number) {
+/// It will contain X digits, depending on divider.
+/// If divider is set to 1000L, it will contain 4 digits
+/// If divider is set to 10000L, it will contain 5 digits
+void print_uint16_custom(uint16_t number, uint16_t divider) {
 	// maximum supported number has 4 digits
 	// put a divider as appropriate power of 10 to represent the longest supported number
-	uint16_t divider = 1000L;
 	while(divider != 0) {
 		lcd_putc((number / divider) % 10 + '0');
 		divider /= 10;
 	}
+}
+
+/// Prints a non-negative integer in current position of the screen
+/// It will contain 4 digits, and will start with leading zeroes.
+void print_uint16(uint16_t number) {
+	print_uint16_custom(number, 1000L);
 }
 
 /// Prints a non-negative integer in current position of the screen,
@@ -179,6 +243,41 @@ void print_start_sliding() {
 	lcd_putc(programming_state.yes_no + '0');
 }
 
+void print_calibration() {
+	lcd_clrscr();
+	lcd_puts("Calibrate? ");
+	print_uint16_custom(get_steps_per_slide(), 10000L);
+	print_yes_no();
+}
+
+// performs an operation associated with each state change.
+// for instance, updates LCD screen
+void change_programming_state(uint8_t desired_state) {
+	switch (desired_state)
+	{
+		case PROGRAMMING_CALIBRATION:
+		print_calibration();
+		break;
+		case PROGRAMMING_STATE_TIME:
+		print_total_time();
+		break;
+		case PROGRAMMING_STATE_EXPOSURE_TIME:
+		print_exposure_time();
+		break;
+		case PROGRAMMING_STATE_PICTURES:
+		print_pictures_count();
+		break;
+		case PROGRAMMING_STATE_DIRECTION:
+		print_change_direction();
+		break;
+		case PROGRAMMING_STATE_START:
+		print_start_sliding();
+		break;
+	}
+	
+	programming_state.state = desired_state;
+}
+
 void handle_programming() {
 	// TODO: double buttons clicked - consider doing calibration
 	// TODO: calculate number of pictures and exposure time and see if you can move fast enough between points
@@ -202,8 +301,7 @@ void handle_programming() {
 		}
 		
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
-			programming_state.state = PROGRAMMING_STATE_EXPOSURE_TIME;
-			print_exposure_time();
+			change_programming_state(PROGRAMMING_STATE_EXPOSURE_TIME);
 			
 			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
@@ -226,8 +324,8 @@ void handle_programming() {
 		}
 
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
-			programming_state.state = PROGRAMMING_STATE_PICTURES;
-			print_pictures_count();
+			change_programming_state(PROGRAMMING_STATE_PICTURES);
+			
 			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 
@@ -245,8 +343,8 @@ void handle_programming() {
 		}
 
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
-			programming_state.state = PROGRAMMING_STATE_DIRECTION;
-			print_change_direction();
+			change_programming_state(PROGRAMMING_STATE_DIRECTION);
+			
 			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 
@@ -266,8 +364,7 @@ void handle_programming() {
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
 			if(programming_state.yes_no == 0) {
 				// the answer is no, go to the next question
-				programming_state.state = PROGRAMMING_STATE_START;
-				print_start_sliding();
+				change_programming_state(PROGRAMMING_STATE_START);
 				} else {
 				// the answer is "yes", change the direction (and move the platform),
 				// go back to question with state no
@@ -302,8 +399,7 @@ void handle_programming() {
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
 			if(programming_state.yes_no == 0) {
 				// the answer is no, go to the first question
-				programming_state.state = PROGRAMMING_STATE_TIME;
-				print_total_time();
+				change_programming_state(PROGRAMMING_CALIBRATION);
 				} else {
 				// the answer is "yes", change the direction (and move the platform),
 				// go back to question with state no
@@ -311,15 +407,35 @@ void handle_programming() {
 
 				// set up sliding state
 				// this is a rough estimate of seconds between pictures
-				slider_state.tens_of_seconds_between_pictures = programming_state.total_time_in_minutes *10L * 60L / programming_state.total_number_of_pictures;
+				slider_state.tens_of_seconds_between_pictures = (programming_state.total_time_in_minutes *10L * 60L / programming_state.total_number_of_pictures)
+															    - programming_state.exposure_time_in_tens_of_second;
 				slider_state.remaining_steps = programming_state.total_number_of_pictures;
-				slider_state.speed = STEPS_PER_SLIDER / programming_state.total_number_of_pictures;
+				slider_state.speed = steps_per_slider / programming_state.total_number_of_pictures;
 				state = STATE_SLIDING;
 			}
 
 			// wait for the button to go up
 			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
+		break;
+		case PROGRAMMING_CALIBRATION:
+			// YES
+			if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+				lcd_clrscr();
+				lcd_puts("Calibrating...");
+				
+				while(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+				
+				calibrate();
+				
+				change_programming_state(PROGRAMMING_STATE_TIME);
+			}
+			
+			// NO
+			if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+				change_programming_state(PROGRAMMING_STATE_TIME);
+				while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			}
 		break;
 	}
 	_delay_ms(100);
@@ -435,7 +551,15 @@ main (void)
 	programming_state.exposure_time_in_tens_of_second = 10;
 	programming_state.total_time_in_minutes = 30;
 	programming_state.total_number_of_pictures = 300;
-	print_total_time();
+
+	steps_per_slider = get_steps_per_slide();
+	if(steps_per_slider == 0xFFFF || steps_per_slider == 0) {
+		lcd_set_cursor(1, 0);
+		lcd_puts("Not calibrated..");
+		calibrate();
+	}
+	
+	change_programming_state(PROGRAMMING_STATE_TIME);
 	
 	while(1)
 	{

@@ -5,24 +5,28 @@
 #define STATE_SLIDING 0
 #define STATE_PROGRAMMING 1
 
+/// Perform on the new slider - this will
+/// allow you to compute how many steps per slide are required
+#define PROGRAMMING_CALIBRATION 0
+
 /// Setting time of the slide
-#define PROGRAMMING_STATE_TIME 0
+#define PROGRAMMING_STATE_TIME 1
 
 /// Setting how long exposure should be
 /// If using mirror lockup, it should at least be 2.5 seconds
 /// Reasonable range from 0.5 - 30 second (though thirty means a long time :))
 /// In some situations, using short stops is fine too.
-#define PROGRAMMING_STATE_EXPOSURE_TIME 1
+#define PROGRAMMING_STATE_EXPOSURE_TIME 2
 
 /// (or should I rather set time - but one defines another)
-#define PROGRAMMING_STATE_PICTURES 2
+#define PROGRAMMING_STATE_PICTURES 3
 
 /// Setting direction of the slide, "Change direction: YES/NO"
 /// if no, go to next step, if yes, change direction and ask again
-#define PROGRAMMING_STATE_DIRECTION 3
+#define PROGRAMMING_STATE_DIRECTION 4
 
 /// YES/NO "start timelapse", if no, go back to PROGRAMMING_STATE_TIME
-#define PROGRAMMING_STATE_START 4
+#define PROGRAMMING_STATE_START 5
 
 #define DIRECTION_RIGHT 1
 #define DIRECTION_LEFT 0
