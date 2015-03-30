@@ -248,8 +248,7 @@ void print_change_direction() {
 void print_start_sliding() {
 	lcd_clrscr();
 	lcd_puts("Start sliding");
-	lcd_set_cursor(1, 0);
-	lcd_putc(programming_state.yes_no + '0');
+	print_yes_no();
 }
 
 void print_calibration() {
@@ -396,46 +395,44 @@ void handle_programming() {
 		}
 		break;
 		case PROGRAMMING_STATE_START:
-		// change YES/NO answer
+		// Button 2 = YES
 		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
-			programming_state.yes_no ^= 1;
-
-			print_start_sliding();
-
+			lcd_clrscr();
+			lcd_puts("Starting...");
+			
+			// wait for button to go up
 			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL);
+			
+			// the answer is "yes", change the direction (and move the platform),
+			// go back to question with state no
+			programming_state.yes_no = 0;
+
+			// set up sliding state
+			// this is a rough estimate of seconds between pictures
+			slider_state.tens_of_seconds_between_pictures = (programming_state.total_time_in_minutes *10L * 60L / programming_state.total_number_of_pictures)
+			- programming_state.exposure_time_in_tens_of_second;
+			slider_state.remaining_steps = programming_state.total_number_of_pictures;
+			slider_state.over_pictures = 0;
+			slider_state.speed = steps_per_slider / programming_state.total_number_of_pictures;
+			
+			lcd_clrscr();
+			lcd_puts("Stabilizing...");
+			for (uint8_t countdown = 20; countdown >0; --countdown)
+			{
+				lcd_set_cursor(1, 0);
+				print_uint8(countdown / 10);
+				lcd_putc('.');
+				lcd_putc((countdown % 10) + '0');
+				lcd_puts(" [s]");
+				_delay_ms(100);
+			}
+			
+			state = STATE_SLIDING;
 		}
 
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
-			if(programming_state.yes_no == 0) {
-				// the answer is no, go to the first question
-				change_programming_state(PROGRAMMING_CALIBRATION);
-				} else {
-				// the answer is "yes", change the direction (and move the platform),
-				// go back to question with state no
-				programming_state.yes_no = 0;
-
-				// set up sliding state
-				// this is a rough estimate of seconds between pictures
-				slider_state.tens_of_seconds_between_pictures = (programming_state.total_time_in_minutes *10L * 60L / programming_state.total_number_of_pictures)
-															    - programming_state.exposure_time_in_tens_of_second;
-				slider_state.remaining_steps = programming_state.total_number_of_pictures;
-				slider_state.over_pictures = 0;
-				slider_state.speed = steps_per_slider / programming_state.total_number_of_pictures;
-				
-				lcd_clrscr();
-				lcd_puts("Stabilizing...");
-				for (uint8_t countdown = 20; countdown >0; --countdown)
-				{
-					lcd_set_cursor(1, 0);
-					print_uint8(countdown / 10);
-					lcd_putc('.');
-					lcd_putc((countdown % 10) + '0');
-					lcd_puts(" [s]");
-					_delay_ms(100);
-				}
-				
-				state = STATE_SLIDING;
-			}
+			// the answer is no, go to the first question
+			change_programming_state(PROGRAMMING_CALIBRATION);
 
 			// wait for the button to go up
 			while(debounce_read(BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
@@ -571,7 +568,7 @@ main (void)
 		// I do not have motor just yet, comment it out
 		lcd_set_cursor(1, 0);
 		lcd_puts("Going LEFT");
-		drive(DIRECTION_LEFT);
+		// drive(DIRECTION_LEFT);
 	}
 
 	// set initial values
