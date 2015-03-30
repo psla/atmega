@@ -141,6 +141,7 @@ uint8_t debounce_read(uint8_t port, uint8_t pin) {
 
 	return BUTTON_PRESSED_LEVEL;
 }
+
 /// Verifies the platform position
 /// if platform is on the side, update a direction for the next sliding direction
 /// and return 1
@@ -204,10 +205,18 @@ void print_total_time() {
 
 void print_sliding_state() {
 	lcd_clrscr();
-	lcd_puts("Remaining picts:");
-	lcd_set_cursor(1, 0);
-	print_uint16(slider_state.remaining_steps);
+	if(slider_state.remaining_steps >= 0) {
+		lcd_puts("Remaining picts:");
+		lcd_set_cursor(1, 0);
+		print_uint16(slider_state.remaining_steps);
+	} else {
+		lcd_puts("Over pictures:");
+		lcd_set_cursor(1, 0);
+		print_uint16(slider_state.over_pictures);
+	}
+	
 	// TODO: maybe print remaining time?
+	// (in timer interrupt routine?)
 }
 
 void print_exposure_time() {
@@ -410,7 +419,21 @@ void handle_programming() {
 				slider_state.tens_of_seconds_between_pictures = (programming_state.total_time_in_minutes *10L * 60L / programming_state.total_number_of_pictures)
 															    - programming_state.exposure_time_in_tens_of_second;
 				slider_state.remaining_steps = programming_state.total_number_of_pictures;
+				slider_state.over_pictures = 0;
 				slider_state.speed = steps_per_slider / programming_state.total_number_of_pictures;
+				
+				lcd_clrscr();
+				lcd_puts("Stabilizing...");
+				for (uint8_t countdown = 20; countdown >0; --countdown)
+				{
+					lcd_set_cursor(1, 0);
+					print_uint8(countdown / 10);
+					lcd_putc('.');
+					lcd_putc((countdown % 10) + '0');
+					lcd_puts(" [s]");
+					_delay_ms(100);
+				}
+				
 				state = STATE_SLIDING;
 			}
 
@@ -475,12 +498,17 @@ void handle_sliding() {
 
 		// yes, this could go to negative numbers
 		// well, remaining steps is an uint, so it can go to very high numbers actually
-		--slider_state.remaining_steps;
+		if(slider_state.remaining_steps > 0) {
+			--slider_state.remaining_steps;
+		} else {
+			++slider_state.over_pictures;
+		}
 
 		millis_reset();
 
 		print_sliding_state();
 
+		// TODO: takes a step in given direction
 		step(slider_state.direction, slider_state.speed);
 
 		unsigned long passed_time = millis_get();
@@ -498,12 +526,11 @@ void handle_sliding() {
 			
 			_delay_ms(100);
 		}
-
-		// move to new position
-		// but also count time (as the slider moves, it is part of the interval
-		// between pictures)
-
-
+		
+		lcd_set_cursor(1, 9);
+		print_uint8(0);
+		lcd_puts(" [s]");
+		
 		// otherwise go and take pictures!!
 		done =
 		(slider_state.direction == DIRECTION_RIGHT && (IS_SET(PINB, RIGHT_SWITCH) == SWITCH_ACTIVE))

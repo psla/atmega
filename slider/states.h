@@ -58,6 +58,11 @@ typedef struct slider_state_t {
   /// But you can continue going forward and taking pictures until you reach the other end of the slider
   uint16_t remaining_steps;
   
+  /// When remaining steps reach 0, but platform does not reach
+  /// the side of slider, it continues taking pictures
+  /// and reports additional pictures count.
+  uint16_t over_pictures;
+  
   /// How many seconds between two pictures
   /// ('exposure_time_int_tens_of_seconds' represents how long the shutter button will be pressed,
   /// while this field represents how much time between two pictures has to pass)
