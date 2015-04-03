@@ -4,7 +4,7 @@
 #include "../lib/common.h"
 #include "../lib/millis.h"
 #include "states.h"
-#include "stepper.h"
+#include "../lib/stepper.h"
 #include "slider_memory.h"
 
 // TODO: Figure story for unit tests. cppUnit? uCNit?
@@ -15,6 +15,11 @@
 #define CAMERA_SHUTTER_PIN PB1
 #define CAMERA_FOCUS_PIN PB4
 #define CAMERA_DDB DDB2
+
+// this is the first pin out of 4 to drive motor.
+// pins must be connected to the same port and must be consecutive.
+#define MOTOR_FIRST_PIN PIN0
+#define MOTOR_DDR DDRD
 
 // when button is pressed it will be either HIGH or LOW
 // currently I am using built-in pull-up resistor and connected button to GND
@@ -495,7 +500,7 @@ void handle_sliding() {
 		print_sliding_state();
 
 		// TODO: takes a step in given direction
-		step(slider_state.direction, slider_state.speed);
+		step(slider_state.speed, 3, slider_state.direction);
 
 		unsigned long passed_time = millis_get();
 
@@ -542,6 +547,17 @@ main (void)
 	// pull-up resistor for LEFT | RIGHT reed switch (connect it to GND)
 	BUTTON1_PORT |= 1 << LEFT_SWITCH;
 	BUTTON1_PORT |= 1 << RIGHT_SWITCH;
+
+	// set up motor pins as output
+	MOTOR_DDR |= _BV(MOTOR_FIRST_PIN);
+	MOTOR_DDR |= _BV(MOTOR_FIRST_PIN + 1);
+	MOTOR_DDR |= _BV(MOTOR_FIRST_PIN + 2);
+	MOTOR_DDR |= _BV(MOTOR_FIRST_PIN + 3);
+	
+	while(1) {
+		step(200, 3, 1);
+		_delay_ms(1000);
+	}
 	
 	millis_init();
 	lcd_init();

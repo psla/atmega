@@ -42,6 +42,7 @@ typedef struct slider_state_t {
   /// Number of rotations to make per step.
   /// In other words, number of stepper motor steps to take between two pictures
   /// This must be positive number
+  /// it must be lower than 200! (TODO: add cheks)
   uint8_t speed;
 
   /// Contains number of remaining pictures to take
