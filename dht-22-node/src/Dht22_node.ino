@@ -60,6 +60,7 @@ void loop() {
 		blink_repeat(1);
 	else
 		blink_repeat(8);
+
 	digitalWrite(LED,LOW);
 
 	radio.sleep();
