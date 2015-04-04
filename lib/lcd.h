@@ -11,21 +11,23 @@
 #include <avr/io.h>
 
 // Edit these
-#define LCD_DDR  DDRD
-#define LCD_PORT PORTD
+#define LCD_CONTROL_DDR DDRD
+#define LCD_CONTROL_PORT PORTD
+#define LCD_DDR  DDRB
+#define LCD_PORT PORTB
 
-#define LCD_RS 7
+#define LCD_RS 5
 #define LCD_EN 6
-#define LCD_D0 2
+#define LCD_D0 0
 // note, D1, D2, D3 are ignored, they must follow
 // D0 (if D0 is Px0, then they have to be Px1, Px2, Px3
 // if D0 is Px2, then they have to be Px3, Px4, Px5
 // also, this library currently does not allow you to use other pins
 // on the port where you connected screen
 // and given that it was optimized to use 6 pins, you are losing 2 pins. TODO
-#define LCD_D1 3
-#define LCD_D2 4
-#define LCD_D3 5
+#define LCD_D1 1
+#define LCD_D2 2
+#define LCD_D3 3
 
 #define LCD_COL_COUNT 16
 #define LCD_ROW_COUNT 2

@@ -28,16 +28,16 @@ void onestep(uint8_t direction){
 	
 	switch(lastStep){
 		case 0:
-		MOTOR_PORT = 0b00000101;
+		MOTOR_PORT = (MOTOR_PORT & 0xf0) | 0b00000101;
 		break;
 		case 1:
-		MOTOR_PORT = 0b00000110;
+		MOTOR_PORT = (MOTOR_PORT & 0xf0) | 0b00000110;
 		break;
 		case 2:
-		MOTOR_PORT = 0b00001010;
+		MOTOR_PORT = (MOTOR_PORT & 0xf0) | 0b00001010;
 		break;
 		case 3:
-		MOTOR_PORT = 0b00001001;
+		MOTOR_PORT = (MOTOR_PORT & 0xf0) | 0b00001001;
 		break;
 	}
 }

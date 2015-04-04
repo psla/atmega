@@ -10,11 +10,19 @@
 // TODO: Figure story for unit tests. cppUnit? uCNit?
 #define BUTTON1_PORT PORTB
 #define BUTTON1_READ PINB
-#define BUTTON1_PIN PB0
-#define BUTTON2_PIN PB2
-#define CAMERA_SHUTTER_PIN PB1
-#define CAMERA_FOCUS_PIN PB4
-#define CAMERA_DDB DDB2
+#define BUTTON1_PIN  PB4
+
+#define BUTTON2_PORT PORTD
+#define BUTTON2_READ PIND
+#define BUTTON2_PIN  PD7
+
+#define CAMERA_SHUTTER_PORT PORTB
+#define CAMERA_SHUTTER_DDR  DDRB
+#define CAMERA_SHUTTER_PIN  PB7
+
+#define CAMERA_FOCUS_PORT PORTB
+#define CAMERA_FOCUS_DDR DDRB
+#define CAMERA_FOCUS_PIN PB6
 
 // this is the first pin out of 4 to drive motor.
 // pins must be connected to the same port and must be consecutive.
@@ -38,8 +46,13 @@
 /// This means, that platform is in the middle if both are "LOW"
 /// (this way we can preserve energy - most of the time slider will be
 /// driving from left to right, so having current flowing (even small current) is excessive)
-#define LEFT_SWITCH PB3
-#define RIGHT_SWITCH PB3
+#define LEFT_SWITCH_PORT PORTD
+#define LEFT_SWITCH_READ PIND
+#define LEFT_SWITCH_PIN PB4
+
+#define RIGHT_SWITCH_PORT PORTB
+#define RIGHT_SWITCH_READ PINB
+#define RIGHT_SWITCH_PIN PB5
 
 slider_state_t slider_state = {0};
 programming_state_t programming_state = {0};
@@ -91,8 +104,8 @@ void calibrate() {
 		}
 		
 		// yes:
-		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
-			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+		if(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
 			set_steps_per_slide(steps);
 			return;
 		}
@@ -106,7 +119,7 @@ uint16_t drive(uint8_t direction)
 {
 	uint16_t steps = 0;
 	if(direction) {
-		while(IS_SET(PINB, RIGHT_SWITCH) == SWITCH_INACTIVE)  {
+		while(IS_SET(RIGHT_SWITCH_READ, RIGHT_SWITCH_PIN) == SWITCH_INACTIVE)  {
 			// move right
 			++steps;
 			
@@ -114,7 +127,7 @@ uint16_t drive(uint8_t direction)
 			_delay_ms(5);
 		}
 		} else {
-		while(IS_SET(PINB, LEFT_SWITCH) == SWITCH_INACTIVE) {
+		while(IS_SET(LEFT_SWITCH_READ, LEFT_SWITCH_PIN) == SWITCH_INACTIVE) {
 			// move left
 			++steps;
 			
@@ -153,12 +166,12 @@ uint8_t debounce_read(uint8_t port, uint8_t pin) {
 /// otherwise do nothing and return 0
 uint8_t update_direction_based_on_platform_position()
 {
-	if(IS_SET(PINB, LEFT_SWITCH) == SWITCH_ACTIVE) {
+	if(IS_SET(LEFT_SWITCH_READ, LEFT_SWITCH_PIN) == SWITCH_ACTIVE) {
 		slider_state.direction = DIRECTION_RIGHT;
 		return 1;
 	}
 
-	if(IS_SET(PINB, RIGHT_SWITCH) == SWITCH_ACTIVE) {
+	if(IS_SET(RIGHT_SWITCH_READ, RIGHT_SWITCH_PIN) == SWITCH_ACTIVE) {
 		slider_state.direction = DIRECTION_LEFT;
 		return 1;
 	}
@@ -297,7 +310,7 @@ void handle_programming() {
 	// to start with, ensure there is at least 2 seconds interval to move platform
 	switch(programming_state.state) {
 		case PROGRAMMING_STATE_TIME:
-		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			// maximum 600 minutes, minimum 10
 			programming_state.total_time_in_minutes = programming_state.total_time_in_minutes + 10;
 			if(programming_state.total_time_in_minutes > 600) {
@@ -309,7 +322,7 @@ void handle_programming() {
 			// read for the button to go up
 			// alternatively, support hold in the future (60 clicks to loop through right now..)
 			// or use potentiometer
-			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
@@ -320,7 +333,7 @@ void handle_programming() {
 		break;
 
 		case PROGRAMMING_STATE_EXPOSURE_TIME:
-		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			if(programming_state.exposure_time_in_tens_of_second < 10)
 			programming_state.exposure_time_in_tens_of_second += 2;
 			else
@@ -332,7 +345,7 @@ void handle_programming() {
 			print_exposure_time();
 
 			// while for the button to go up
-			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
@@ -343,7 +356,7 @@ void handle_programming() {
 
 		break;
 		case PROGRAMMING_STATE_PICTURES:
-		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			programming_state.total_number_of_pictures += 50;
 			if(programming_state.total_number_of_pictures > 1000) {
 				programming_state.total_number_of_pictures = 50;
@@ -351,7 +364,7 @@ void handle_programming() {
 
 			print_pictures_count();
 
-			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
@@ -372,7 +385,7 @@ void handle_programming() {
 		}
 		
 		// Yes button?
-		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			// the answer is "yes", change the direction (and move the platform),
 			// go back to question with state no
 			lcd_clrscr();
@@ -389,17 +402,17 @@ void handle_programming() {
 			print_change_direction();
 
 			// wait for the button to go up
-			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		break;
 		case PROGRAMMING_STATE_START:
 		// Button 2 = YES
-		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			lcd_clrscr();
 			lcd_puts("Starting...");
 			
 			// wait for button to go up
-			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL);
+			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL);
 			
 			// set up sliding state
 			// this is a rough estimate of seconds between pictures
@@ -434,11 +447,11 @@ void handle_programming() {
 		break;
 		case PROGRAMMING_CALIBRATION:
 		// YES
-		if(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			lcd_clrscr();
 			lcd_puts("Calibrating...");
 			
-			while(debounce_read(BUTTON1_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
 			
 			calibrate();
 			
@@ -459,13 +472,13 @@ void take_picture() {
 	uint8_t counter = programming_state.exposure_time_in_tens_of_second;
 
 	// set focus
-	SET_BIT(PORTB, CAMERA_FOCUS_PIN);
+	SET_BIT(CAMERA_FOCUS_PORT, CAMERA_FOCUS_PIN);
 	
 	// trigger shutter after 30ms since focus (even on manual focus,
 	// they cannot be pressed together)
 	_delay_ms(30);
 	
-	SET_BIT(PORTB, CAMERA_SHUTTER_PIN);
+	SET_BIT(CAMERA_SHUTTER_PORT, CAMERA_SHUTTER_PIN);
 	
 	// keep shutter pressed for exposure time time.
 	// this usually would not matter, unless running in manual mode
@@ -474,8 +487,8 @@ void take_picture() {
 		_delay_ms(100);
 	}
 
-	CLEAR_BIT(PORTB, CAMERA_FOCUS_PIN);
-	CLEAR_BIT(PORTB, CAMERA_SHUTTER_PIN);
+	CLEAR_BIT(CAMERA_FOCUS_PORT, CAMERA_FOCUS_PIN);
+	CLEAR_BIT(CAMERA_SHUTTER_PORT, CAMERA_SHUTTER_PIN);
 }
 
 void handle_sliding() {
@@ -524,8 +537,8 @@ void handle_sliding() {
 		
 		// otherwise go and take pictures!!
 		done =
-		(slider_state.direction == DIRECTION_RIGHT && (IS_SET(PINB, RIGHT_SWITCH) == SWITCH_ACTIVE))
-		|| (slider_state.direction == DIRECTION_LEFT && (IS_SET(PINB, LEFT_SWITCH) == SWITCH_ACTIVE));
+		(slider_state.direction == DIRECTION_RIGHT && (IS_SET(RIGHT_SWITCH_READ, RIGHT_SWITCH_PIN) == SWITCH_ACTIVE))
+		|| (slider_state.direction == DIRECTION_LEFT && (IS_SET(LEFT_SWITCH_READ, LEFT_SWITCH_PIN) == SWITCH_ACTIVE));
 	}
 
 	state = STATE_PROGRAMMING;
@@ -539,14 +552,16 @@ main (void)
 	// DDRB |= _BV(BUTTON1_PIN);
 	// DDRB |= _BV(BUTTON2_PIN);
 	// DDRB |= _BV(PB1);
-	// 
+	CAMERA_SHUTTER_DDR |= _BV(CAMERA_SHUTTER_PIN);
+	CAMERA_FOCUS_DDR   |= _BV(CAMERA_FOCUS_PIN);
+	
 	// // enable pull-up resistor for button
-	// BUTTON1_PORT |= 1 << BUTTON1_PIN;
-	// BUTTON1_PORT |= 1 << BUTTON2_PIN;
-	// 
-	// // pull-up resistor for LEFT | RIGHT reed switch (connect it to GND)
-	// BUTTON1_PORT |= 1 << LEFT_SWITCH;
-	// BUTTON1_PORT |= 1 << RIGHT_SWITCH;
+	BUTTON1_PORT |= 1 << BUTTON1_PIN;
+	BUTTON2_PORT |= 1 << BUTTON2_PIN;
+	
+	// pull-up resistor for LEFT | RIGHT reed switch (connect it to GND to close circuit)
+	LEFT_SWITCH_PORT  |= 1 << LEFT_SWITCH_PIN;
+	RIGHT_SWITCH_PORT |= 1 << RIGHT_SWITCH_PORT;
 
 	// set up motor pins as output
 	MOTOR_DDR |= _BV(MOTOR_FIRST_PIN);
@@ -563,10 +578,10 @@ main (void)
 
 	lcd_puts("Welcome...");
 
-	while(1) {
-		step(200, 2, 1);
-		_delay_ms(1000);
-	}
+	// while(1) {
+	// 	step(200, 2, 1);
+	// 	_delay_ms(1000);
+	// }
 		
 	// see position of the platform and if not on the side, go to the side
 	// this operation is synchronous which means that it blocks UI / screen while the motor is moving
@@ -574,7 +589,7 @@ main (void)
 		// I do not have motor just yet, comment it out
 		lcd_set_cursor(1, 0);
 		lcd_puts("Going LEFT");
-		// drive(DIRECTION_LEFT);
+		drive(DIRECTION_LEFT);
 	}
 
 	// set initial values
