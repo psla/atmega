@@ -48,11 +48,11 @@
 /// driving from left to right, so having current flowing (even small current) is excessive)
 #define LEFT_SWITCH_PORT PORTD
 #define LEFT_SWITCH_READ PIND
-#define LEFT_SWITCH_PIN PB4
+#define LEFT_SWITCH_PIN PD4
 
-#define RIGHT_SWITCH_PORT PORTB
-#define RIGHT_SWITCH_READ PINB
-#define RIGHT_SWITCH_PIN PB5
+#define RIGHT_SWITCH_PORT PORTC
+#define RIGHT_SWITCH_READ PINC
+#define RIGHT_SWITCH_PIN PC0
 
 slider_state_t slider_state = {0};
 programming_state_t programming_state = {0};
@@ -122,17 +122,18 @@ uint16_t drive(uint8_t direction)
 		while(IS_SET(RIGHT_SWITCH_READ, RIGHT_SWITCH_PIN) == SWITCH_INACTIVE)  {
 			// move right
 			++steps;
+			onestep(direction);
 			
-			//TODO: take step
-			_delay_ms(5);
+			_delay_ms(2);
 		}
 		} else {
 		while(IS_SET(LEFT_SWITCH_READ, LEFT_SWITCH_PIN) == SWITCH_INACTIVE) {
 			// move left
 			++steps;
 			
-			//TODO: take step
-			_delay_ms(5);
+			onestep(direction);
+			
+			_delay_ms(2);
 		}
 	}
 
@@ -548,20 +549,17 @@ void handle_sliding() {
 int
 main (void)
 {
-	// TODO: camera requires two pins (focus and shutter)
-	// DDRB |= _BV(BUTTON1_PIN);
-	// DDRB |= _BV(BUTTON2_PIN);
-	// DDRB |= _BV(PB1);
+	// TODO: camera requires two pins (focus and shutter) to be output
 	CAMERA_SHUTTER_DDR |= _BV(CAMERA_SHUTTER_PIN);
 	CAMERA_FOCUS_DDR   |= _BV(CAMERA_FOCUS_PIN);
 	
-	// // enable pull-up resistor for button
+	// enable pull-up resistor for button. DDRs should be input by default.
 	BUTTON1_PORT |= 1 << BUTTON1_PIN;
 	BUTTON2_PORT |= 1 << BUTTON2_PIN;
 	
 	// pull-up resistor for LEFT | RIGHT reed switch (connect it to GND to close circuit)
 	LEFT_SWITCH_PORT  |= 1 << LEFT_SWITCH_PIN;
-	RIGHT_SWITCH_PORT |= 1 << RIGHT_SWITCH_PORT;
+	RIGHT_SWITCH_PORT |= 1 << RIGHT_SWITCH_PIN;
 
 	// set up motor pins as output
 	MOTOR_DDR |= _BV(MOTOR_FIRST_PIN);
@@ -575,13 +573,8 @@ main (void)
 	lcd_on();
 	lcd_clear();
 	lcd_return_home();
-
+	
 	lcd_puts("Welcome...");
-
-	// while(1) {
-	// 	step(200, 2, 1);
-	// 	_delay_ms(1000);
-	// }
 		
 	// see position of the platform and if not on the side, go to the side
 	// this operation is synchronous which means that it blocks UI / screen while the motor is moving
