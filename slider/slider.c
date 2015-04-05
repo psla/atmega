@@ -87,7 +87,7 @@ void calibrate() {
 	lcd_puts("Calibrating");
 	lcd_set_cursor(1, 0);
 	lcd_puts("Going right");
-	_delay_ms(2000);
+	_delay_ms(700);
 	uint16_t steps = drive(DIRECTION_RIGHT);
 	lcd_clrscr();
 	lcd_puts("Steps: ");
@@ -107,6 +107,7 @@ void calibrate() {
 		if(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
 			set_steps_per_slide(steps);
+			steps_per_slider = get_steps_per_slide();
 			return;
 		}
 	}
@@ -587,11 +588,13 @@ main (void)
 
 	// set initial values
 	programming_state.exposure_time_in_tens_of_second = 10;
-	programming_state.total_time_in_minutes = 30;
-	programming_state.total_number_of_pictures = 300;
+	
+	// development numbers - 2 minutes, 20 pictures.
+	programming_state.total_time_in_minutes = 2;
+	programming_state.total_number_of_pictures = 20;
 
 	steps_per_slider = get_steps_per_slide();
-	if(steps_per_slider == 0xFFFF || steps_per_slider == 0) {
+	while(steps_per_slider == 0xFFFF || steps_per_slider == 0) {
 		lcd_set_cursor(1, 0);
 		lcd_puts("Not calibrated..");
 		calibrate();
