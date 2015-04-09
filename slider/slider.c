@@ -515,7 +515,7 @@ void handle_sliding() {
 		print_sliding_state();
 
 		// TODO: takes a step in given direction
-		step(slider_state.speed, 3, slider_state.direction);
+		step(slider_state.speed, 6, slider_state.direction);
 
 		unsigned long passed_time = millis_get();
 
