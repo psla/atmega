@@ -1,3 +1,4 @@
+#include "dht22.hpp"
 #include "RFM69.h"
 #include <SPI.h>
 #include "dht.h"
@@ -20,12 +21,6 @@ RFM69 radio(RF69_SPI_CS, RF69_IRQ_PIN, true, RF69_IRQ_NUM);
 dht22data sensorData;
 
 
-typedef struct {
-	uint8_t  nodeId; //store this nodeId
-	int16_t  temperature;   
-	int16_t  humidity;   
-        uint8_t  checksum;
-} Payload;
 Payload dataToBeSent;
 
 void setup() {
@@ -50,6 +45,8 @@ void setup() {
  * checksum is computed by adding all bytes together as unsigned integer
  */
 uint8_t get_checksum(const Payload* data) {
+  uint8_t checksum = 0;
+
   // node Id
   checksum += *((const uint8_t*)data);
   
