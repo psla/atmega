@@ -24,6 +24,7 @@ typedef struct {
 	uint8_t  nodeId; //store this nodeId
 	int16_t  temperature;   
 	int16_t  humidity;   
+        uint8_t  checksum;
 } Payload;
 Payload dataToBeSent;
 
@@ -35,6 +36,7 @@ void setup() {
 	Blink(LED, 500);
 
 	radio.setHighPower(); //uncomment only for RFM69HW! but only if you want to use full power
+        radio.setPowerLevel(25);
 	radio.encrypt(KEY);
 
 	dataToBeSent.nodeId = NODEID;
@@ -42,10 +44,35 @@ void setup() {
         blink_repeat(15);
 }
 
+/** 
+ * returns a checksum of payload
+ *
+ * checksum is computed by adding all bytes together as unsigned integer
+ */
+uint8_t get_checksum(const Payload* data) {
+  // node Id
+  checksum += *((const uint8_t*)data);
+  
+  // temperature
+  checksum += *(((const uint8_t*)data) + 1);
+  checksum += *(((const uint8_t*)data) + 2);
+
+  // humidity
+  checksum += *(((const uint8_t*)data) + 3);
+  checksum += *(((const uint8_t*)data) + 4);
+
+  return checksum;
+}
+
 void loop() {
 	// measure temperature
+        uint8_t retries_before_error = 3;
 	while(!getDht22(&sensorData)) { 
-		digitalWrite(LED, HIGH);
+                if(retries_before_error > 0) {
+                  digitalWrite(LED, HIGH);
+                  --retries_before_error;
+                }
+
 		delay(RETRY_DELAY);
 		digitalWrite(LED, LOW);
 	}
@@ -55,18 +82,24 @@ void loop() {
 	dataToBeSent.nodeId = NODEID;
 	dataToBeSent.temperature = sensorData.temperature;
 	dataToBeSent.humidity = sensorData.humidity;
+        dataToBeSent.checksum = get_checksum((const Payload *) &dataToBeSent);
 
 	if (radio.sendWithRetry(GATEWAYID, (const void*)(&dataToBeSent), sizeof(dataToBeSent)))
-		blink_repeat(1);
+        {
+                // for testing you may uncomment line below
+		// blink_repeat(1);
+        }
 	else
+        {
 		blink_repeat(8);
+        }
 
 	digitalWrite(LED,LOW);
 
 	radio.sleep();
 
-	// every 15 seconds for now
-	for(int i = 0; i < 2; i++) {
+	// send data roughly once every minute
+	for(int i = 0; i < 6; i++) {
 		LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 	}
 }
