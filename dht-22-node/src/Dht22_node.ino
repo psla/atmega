@@ -45,30 +45,31 @@ void setup() {
  * checksum is computed by adding all bytes together as unsigned integer
  */
 uint8_t get_checksum(const Payload* data) {
-  uint8_t checksum = 0;
+	uint8_t checksum = 0;
 
-  // node Id
-  checksum += *((const uint8_t*)data);
-  
-  // temperature
-  checksum += *(((const uint8_t*)data) + 1);
-  checksum += *(((const uint8_t*)data) + 2);
+	// node Id
+	checksum += *((const uint8_t*)data);
 
-  // humidity
-  checksum += *(((const uint8_t*)data) + 3);
-  checksum += *(((const uint8_t*)data) + 4);
+	// temperature
+	checksum += *(((const uint8_t*)data) + 1);
+	checksum += *(((const uint8_t*)data) + 2);
 
-  return checksum;
+	// humidity
+	checksum += *(((const uint8_t*)data) + 3);
+	checksum += *(((const uint8_t*)data) + 4);
+
+	return checksum;
 }
 
 void loop() {
 	// measure temperature
         uint8_t retries_before_error = 3;
 	while(!getDht22(&sensorData)) { 
-                if(retries_before_error > 0) {
-                  digitalWrite(LED, HIGH);
-                  --retries_before_error;
-                }
+		if(retries_before_error > 0) {
+			--retries_before_error;
+		} else {
+			digitalWrite(LED, HIGH);
+		}
 
 		delay(RETRY_DELAY);
 		digitalWrite(LED, LOW);
