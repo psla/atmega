@@ -543,6 +543,7 @@ void handle_sliding() {
 		|| (slider_state.direction == DIRECTION_LEFT && (IS_SET(LEFT_SWITCH_READ, LEFT_SWITCH_PIN) == SWITCH_ACTIVE));
 	}
 
+	slider_state.direction = 1 - slider_state.direction;
 	state = STATE_PROGRAMMING;
 	print_total_time();
 }

@@ -28,6 +28,8 @@
 /// YES/NO "start timelapse", if no, go back to PROGRAMMING_STATE_TIME
 #define PROGRAMMING_STATE_START 5
 
+// Direction of the slide
+// one of those two needs to be 0, and the other 1, (1 - x) is ussed to reverse direction
 #define DIRECTION_RIGHT 1
 #define DIRECTION_LEFT 0
 
