@@ -46,13 +46,13 @@
 /// This means, that platform is in the middle if both are "LOW"
 /// (this way we can preserve energy - most of the time slider will be
 /// driving from left to right, so having current flowing (even small current) is excessive)
-#define LEFT_SWITCH_PORT PORTD
-#define LEFT_SWITCH_READ PIND
-#define LEFT_SWITCH_PIN PD4
+#define RIGHT_SWITCH_PORT PORTD
+#define RIGHT_SWITCH_READ PIND
+#define RIGHT_SWITCH_PIN PD4
 
-#define RIGHT_SWITCH_PORT PORTC
-#define RIGHT_SWITCH_READ PINC
-#define RIGHT_SWITCH_PIN PC0
+#define LEFT_SWITCH_PORT PORTC
+#define LEFT_SWITCH_READ PINC
+#define LEFT_SWITCH_PIN PC0
 
 slider_state_t slider_state = {0};
 programming_state_t programming_state = {0};
