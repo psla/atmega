@@ -636,11 +636,13 @@ main (void)
 	}
 
 	// set initial values
-	programming_state.exposure_time_in_tens_of_second = 10;
+	// 3 seconds is 2 seconds mirror-up + 0.5 second for picture (change it for sunrise sunset)
+	programming_state.exposure_time_in_tens_of_second = 25;
 	
-	// development numbers - 2 minutes, 20 pictures.
-	programming_state.total_time_in_minutes = 2;
-	programming_state.total_number_of_pictures = 30;
+	// good development numbers - 2 minutes, 20 pictures.
+	// default numbers: 250 pictures, 20 minutes
+	programming_state.total_time_in_minutes = 20;
+	programming_state.total_number_of_pictures = 250;
 
 	steps_per_slider = get_steps_per_slide();
 	while(steps_per_slider == 0xFFFF || steps_per_slider == 0) {
