@@ -1,5 +1,6 @@
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/interrupt.h>
 #include "../lib/lcd.h"
 #include "../lib/common.h"
 #include "../lib/millis.h"
@@ -305,6 +306,29 @@ void change_programming_state(uint8_t desired_state) {
 	programming_state.state = desired_state;
 }
 
+void start_sliding() {
+	// set up sliding state
+	// this is a rough estimate of seconds between pictures
+	slider_state.tens_of_seconds_between_pictures = (((uint32_t) programming_state.total_time_in_minutes) * 10LL * 60LL / programming_state.total_number_of_pictures) - programming_state.exposure_time_in_tens_of_second;
+	slider_state.remaining_steps = programming_state.total_number_of_pictures;
+	slider_state.over_pictures = 0;
+	slider_state.speed = steps_per_slider / programming_state.total_number_of_pictures;
+	
+	lcd_clrscr();
+	lcd_puts("Stabilizing...");
+	for (uint8_t countdown = 20; countdown >0; --countdown)
+	{
+		lcd_set_cursor(1, 0);
+		print_uint8(countdown / 10);
+		lcd_putc('.');
+		lcd_putc((countdown % 10) + '0');
+		lcd_puts(" [s]");
+		_delay_ms(100);
+	}
+	
+	state = STATE_SLIDING;
+}
+
 void handle_programming() {
 	// TODO: double buttons clicked - consider doing calibration
 	// TODO: calculate number of pictures and exposure time and see if you can move fast enough between points
@@ -416,27 +440,7 @@ void handle_programming() {
 			// wait for button to go up
 			while(debounce_read(BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL);
 			
-			// set up sliding state
-			// this is a rough estimate of seconds between pictures
-			slider_state.tens_of_seconds_between_pictures = (programming_state.total_time_in_minutes *10L * 60L / programming_state.total_number_of_pictures)
-			- programming_state.exposure_time_in_tens_of_second;
-			slider_state.remaining_steps = programming_state.total_number_of_pictures;
-			slider_state.over_pictures = 0;
-			slider_state.speed = steps_per_slider / programming_state.total_number_of_pictures;
-			
-			lcd_clrscr();
-			lcd_puts("Stabilizing...");
-			for (uint8_t countdown = 20; countdown >0; --countdown)
-			{
-				lcd_set_cursor(1, 0);
-				print_uint8(countdown / 10);
-				lcd_putc('.');
-				lcd_putc((countdown % 10) + '0');
-				lcd_puts(" [s]");
-				_delay_ms(100);
-			}
-			
-			state = STATE_SLIDING;
+			start_sliding();
 		}
 
 		if(debounce_read(BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
@@ -533,11 +537,12 @@ void handle_sliding() {
 		}
 
 		unsigned long passed_time = millis_get();
-
+		
 		// this is constant in a run (rotation of specific degree will take always
 		// same amount of time)
 		// we must now wait remaining time
 		repeat_wait = slider_state.tens_of_seconds_between_pictures - (passed_time / 100);
+		
 		for(; repeat_wait > 0; --repeat_wait) {
 			if(repeat_wait % 10 == 0) {
 				lcd_set_cursor(1, 9);
@@ -584,7 +589,8 @@ main (void)
 	MOTOR_DDR |= _BV(MOTOR_FIRST_PIN + 2);
 	MOTOR_DDR |= _BV(MOTOR_FIRST_PIN + 3);
 
-
+	// interrupts are required for millis to work correctly
+	sei();
 	millis_init();
 	lcd_init();
 	lcd_on();
@@ -617,6 +623,9 @@ main (void)
 	}
 	
 	change_programming_state(PROGRAMMING_STATE_TIME);
+	
+	// If debugging slider, you may immediately start sliding
+	// start_sliding();
 	
 	while(1)
 	{
