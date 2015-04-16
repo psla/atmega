@@ -67,7 +67,7 @@ typedef struct slider_state_t {
   uint16_t over_pictures;
   
   /// How many seconds between two pictures
-  /// ('exposure_time_int_tens_of_seconds' represents how long the shutter button will be pressed,
+  /// ('exposure_time_in_tens_of_seconds' represents how long the shutter button will be pressed,
   /// while this field represents how much time between two pictures has to pass)
   uint16_t tens_of_seconds_between_pictures;
 } slider_state_t;
@@ -85,6 +85,8 @@ typedef struct programming_state_t {
 
   /// what's the exposure time in tens of secons (how long platform should be stopped)
   /// 10 means 1 second, 250 means 25 seconds, 5 means 500 ms (0.5 seconds)
+  /// !!! Currently exposure time means how long the slider will be STOPPED for picture, 
+  /// !!! not how long the shutter will be pressed
   uint8_t exposure_time_in_tens_of_second;
 } programming_state_t;
 

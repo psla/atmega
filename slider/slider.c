@@ -475,8 +475,6 @@ void handle_programming() {
 }
 
 void take_picture() {
-	uint8_t counter = programming_state.exposure_time_in_tens_of_second;
-
 	// set focus
 	SET_BIT(CAMERA_FOCUS_PORT, CAMERA_FOCUS_PIN);
 	
@@ -485,6 +483,16 @@ void take_picture() {
 	_delay_ms(30);
 	
 	SET_BIT(CAMERA_SHUTTER_PORT, CAMERA_SHUTTER_PIN);
+	
+	_delay_ms(170);
+	
+	// TODO: change 220ohm resistors to 470ohm (or even 1k, but initial tests showed that they would not work).
+	CLEAR_BIT(CAMERA_FOCUS_PORT, CAMERA_FOCUS_PIN);
+	CLEAR_BIT(CAMERA_SHUTTER_PORT, CAMERA_SHUTTER_PIN);
+	
+
+	// we already waited 0.2s (200ms) before when pressing the shutter button.	
+	uint8_t counter = programming_state.exposure_time_in_tens_of_second - 2;
 	
 	// keep shutter pressed for exposure time time.
 	// this usually would not matter, unless running in manual mode

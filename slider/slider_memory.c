@@ -10,6 +10,7 @@
 uint16_t EEMEM eemem_steps_per_slide;
 
 uint16_t get_steps_per_slide() {
+	return 6345;
 	return eeprom_read_word(&eemem_steps_per_slide);
 }
 
