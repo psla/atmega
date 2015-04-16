@@ -592,7 +592,7 @@ void handle_sliding() {
 
 	slider_state.direction = 1 - slider_state.direction;
 	state = STATE_PROGRAMMING;
-	print_total_time();
+	change_programming_state(PROGRAMMING_STATE_TIME);
 }
 
 int
