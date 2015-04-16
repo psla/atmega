@@ -29,6 +29,8 @@
 // pins must be connected to the same port and must be consecutive.
 #define MOTOR_FIRST_PIN PIN0
 #define MOTOR_DDR DDRD
+// milliseconds between steps. minimum reasonable value: 4
+#define MOTOR_SPEED 6
 
 // when button is pressed it will be either HIGH or LOW
 // currently I am using built-in pull-up resistor and connected button to GND
@@ -71,7 +73,7 @@ uint16_t drive(uint8_t direction);
 void print_change_direction();
 void print_uint16(uint16_t number);
 void print_uint16_custom(uint16_t number, uint16_t divider);
-
+void compute_desired_times();
 
 void print_yes_no() {
 	lcd_set_cursor(1, 0);
@@ -226,7 +228,7 @@ void print_total_time() {
 
 void print_sliding_state() {
 	lcd_clrscr();
-	if(slider_state.remaining_steps >= 0) {
+	if(slider_state.remaining_steps > 0) {
 		lcd_puts("Remaining picts:");
 		lcd_set_cursor(1, 0);
 		print_uint16(slider_state.remaining_steps);
@@ -267,8 +269,21 @@ void print_change_direction() {
 
 void print_start_sliding() {
 	lcd_clrscr();
-	lcd_puts("Start sliding");
-	print_yes_no();
+	compute_desired_times();
+	
+	// this is a minimum time that is required to capture a picture
+	// add some fudge factor to it
+	uint16_t min_time_per_picture = (programming_state.exposure_time_in_tens_of_second + (slider_state.speed * MOTOR_SPEED / 100));
+	uint16_t required_time_per_picture = (((uint32_t) programming_state.total_time_in_minutes) * 10LL * 60LL / programming_state.total_number_of_pictures);
+	
+	print_uint16(min_time_per_picture);
+	lcd_puts(" < ");
+	print_uint16(required_time_per_picture);
+	lcd_puts(" [ds]");
+	
+	lcd_set_cursor(1, 0);
+	
+	lcd_puts("Start?");
 }
 
 void print_calibration() {
@@ -306,13 +321,17 @@ void change_programming_state(uint8_t desired_state) {
 	programming_state.state = desired_state;
 }
 
+void compute_desired_times() {
+		slider_state.tens_of_seconds_between_pictures = (((uint32_t) programming_state.total_time_in_minutes) * 10LL * 60LL / programming_state.total_number_of_pictures) - programming_state.exposure_time_in_tens_of_second;
+		slider_state.remaining_steps = programming_state.total_number_of_pictures;
+		slider_state.over_pictures = 0;
+		slider_state.speed = steps_per_slider / programming_state.total_number_of_pictures;
+}
+
 void start_sliding() {
 	// set up sliding state
 	// this is a rough estimate of seconds between pictures
-	slider_state.tens_of_seconds_between_pictures = (((uint32_t) programming_state.total_time_in_minutes) * 10LL * 60LL / programming_state.total_number_of_pictures) - programming_state.exposure_time_in_tens_of_second;
-	slider_state.remaining_steps = programming_state.total_number_of_pictures;
-	slider_state.over_pictures = 0;
-	slider_state.speed = steps_per_slider / programming_state.total_number_of_pictures;
+	compute_desired_times();
 	
 	lcd_clrscr();
 	lcd_puts("Stabilizing...");
@@ -533,10 +552,10 @@ void handle_sliding() {
 		if(slider_state.direction == DIRECTION_RIGHT)
 		{
 			// safely step right and abort when the border reached
-			border_reached = safe_step(slider_state.speed, 6, slider_state.direction, (const uint8_t *) &RIGHT_SWITCH_READ, 1 << RIGHT_SWITCH_PIN, SWITCH_ACTIVE);
+			border_reached = safe_step(slider_state.speed, MOTOR_SPEED, slider_state.direction, (const uint8_t *) &RIGHT_SWITCH_READ, 1 << RIGHT_SWITCH_PIN, SWITCH_ACTIVE);
 		} else {
 			// safely step left and abort when border reached
-			border_reached = safe_step(slider_state.speed, 6, slider_state.direction, (const uint8_t *) &LEFT_SWITCH_READ, 1 << LEFT_SWITCH_PIN, SWITCH_ACTIVE);
+			border_reached = safe_step(slider_state.speed, MOTOR_SPEED, slider_state.direction, (const uint8_t *) &LEFT_SWITCH_READ, 1 << LEFT_SWITCH_PIN, SWITCH_ACTIVE);
 		}
 		
 		if(border_reached) {
