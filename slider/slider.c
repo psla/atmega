@@ -271,18 +271,17 @@ void print_start_sliding() {
 	lcd_clrscr();
 	compute_desired_times();
 	
-	// this is a minimum time that is required to capture a picture
+	// this is a minimum time that is required to capture a picture (shutter + travel time)
 	// add some fudge factor to it
-	uint16_t min_time_per_picture = (programming_state.exposure_time_in_tens_of_second + (slider_state.speed * MOTOR_SPEED / 100));
-	uint16_t required_time_per_picture = (((uint32_t) programming_state.total_time_in_minutes) * 10LL * 60LL / programming_state.total_number_of_pictures);
+	uint16_t time_per_picture = (programming_state.exposure_time_in_tens_of_second + (slider_state.speed * MOTOR_SPEED / 100));
+	uint16_t interval_between_pictures = (((uint32_t) programming_state.total_time_in_minutes) * 10LL * 60LL / programming_state.total_number_of_pictures);
 	
-	print_uint16(min_time_per_picture);
+	print_uint16(time_per_picture);
 	lcd_puts(" < ");
-	print_uint16(required_time_per_picture);
+	print_uint16(interval_between_pictures);
 	lcd_puts(" [ds]");
 	
 	lcd_set_cursor(1, 0);
-	
 	lcd_puts("Start?");
 }
 
@@ -642,7 +641,7 @@ main (void)
 	// good development numbers - 2 minutes, 20 pictures.
 	// default numbers: 250 pictures, 20 minutes
 	programming_state.total_time_in_minutes = 20;
-	programming_state.total_number_of_pictures = 250;
+	programming_state.total_number_of_pictures = 240;
 
 	steps_per_slider = get_steps_per_slide();
 	while(steps_per_slider == 0xFFFF || steps_per_slider == 0) {
