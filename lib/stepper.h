@@ -22,4 +22,11 @@ void onestep(uint8_t direction);
 /// Use interval_between_steps to set interval in ms.
 void step(uint8_t steps, uint8_t interval_between_steps, uint8_t direction);
 
+/// Takes a number of steps in spefic direction - but will abort as soon as the pin value is equal to abort_level.
+/// returns 1 when the condition is hit (port & mask are at abort level) or 0 if not reached.
+/// 
+/// It will block until all steps are taken.
+/// Use interval_between_steps to set interval in ms.
+uint8_t safe_step(uint8_t steps, uint8_t interval_between_steps, uint8_t direction, const uint8_t * port, uint8_t mask, uint8_t abort_level);
+
 #endif /* STEPPER_H_ */

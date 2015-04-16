@@ -514,8 +514,23 @@ void handle_sliding() {
 
 		print_sliding_state();
 
-		// TODO: takes a step in given direction
-		step(slider_state.speed, 6, slider_state.direction);
+		// whether the current slide reached the border
+		uint8_t border_reached = 0;
+		
+		// step 
+		if(slider_state.direction == DIRECTION_RIGHT)
+		{
+			// safely step right and abort when the border reached
+			border_reached = safe_step(slider_state.speed, 6, slider_state.direction, (const uint8_t *) &RIGHT_SWITCH_READ, 1 << RIGHT_SWITCH_PIN, SWITCH_ACTIVE);
+		} else {
+			// safely step left and abort when border reached
+			border_reached = safe_step(slider_state.speed, 6, slider_state.direction, (const uint8_t *) &LEFT_SWITCH_READ, 1 << LEFT_SWITCH_PIN, SWITCH_ACTIVE);
+		}
+		
+		if(border_reached) {
+			// exit the loop
+			break;
+		}
 
 		unsigned long passed_time = millis_get();
 
@@ -592,7 +607,7 @@ main (void)
 	
 	// development numbers - 2 minutes, 20 pictures.
 	programming_state.total_time_in_minutes = 2;
-	programming_state.total_number_of_pictures = 20;
+	programming_state.total_number_of_pictures = 30;
 
 	steps_per_slider = get_steps_per_slide();
 	while(steps_per_slider == 0xFFFF || steps_per_slider == 0) {

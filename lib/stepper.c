@@ -56,3 +56,30 @@ void step(uint8_t steps, uint8_t interval_between_steps, uint8_t direction) {
 		}
 	}
 }
+
+uint8_t safe_step(uint8_t steps, uint8_t interval_between_steps, uint8_t direction, const uint8_t * port, uint8_t mask, uint8_t abort_level)
+{
+	uint8_t wait_time;
+	
+	// initial check
+	if((*port & mask) == abort_level) {
+		return 1;
+	}
+	
+	for (uint8_t i = 0; i < steps; i++)
+	{
+		if((*port & mask) == abort_level) {
+			return 1;
+		}
+		
+		onestep(direction);
+	
+		wait_time = interval_between_steps;
+		for (wait_time = interval_between_steps; wait_time > 0; --wait_time)
+		{
+			_delay_ms(1);
+		}
+	}
+	
+	return 0;
+}
