@@ -1,3 +1,4 @@
+#include "dht22.hpp"
 #include "RFM69.h"
 #include <SPI.h>
 #include "dht.h"
@@ -19,14 +20,6 @@
 RFM69 radio;
 uint8_t dhtdata [4];
 
-typedef struct {
-	uint8_t  nodeId; //store this nodeId
-	uint8_t  temperature;   
-	uint8_t  humidity;   
-	// these two are most likely going to be 0, as DHT11 does not pass this info
-	uint8_t	 temperature_decimal;
-	uint8_t	 humidity_decimal;
-} Payload;
 Payload dataToBeSent;
 
 void setup() {
@@ -36,7 +29,8 @@ void setup() {
 	radio.initialize(FREQUENCY,NODEID,NETWORKID);
 	Blink(LED, 500);
 
-	// radio.setHighPower(); //uncomment only for RFM69HW! but only if you want to use full power
+	radio.setHighPower(); //uncomment only for RFM69HW! but only if you want to use full power
+	radio.setPowerLevel(25);
 	radio.encrypt(KEY);
 
 	dataToBeSent.nodeId = NODEID;
@@ -53,20 +47,24 @@ void loop() {
 
 	//fill in the struct with new values
 	dataToBeSent.nodeId = NODEID;
-	dataToBeSent.temperature = dhtdata[2];
-	dataToBeSent.temperature_decimal = dhtdata[3];
-	dataToBeSent.humidity = dhtdata[0];
-	dataToBeSent.humidity_decimal = dhtdata[1]; 
+	dataToBeSent.temperature = dhtdata[2] * ((uint16_t) 10);
+	dataToBeSent.humidity = dhtdata[0] * ((uint16_t) 10);
+        dataToBeSent.checksum = get_checksum((const Payload *) &dataToBeSent);
 
 	if (radio.sendWithRetry(GATEWAYID, (const void*)(&dataToBeSent), sizeof(dataToBeSent)))
-		blink_repeat(4);
+        {
+                // for testing you may uncomment line below
+		// blink_repeat(4);
+        }
 	else
+	{
 		blink_repeat(8);
+	}
 	digitalWrite(LED,LOW);
 
 	radio.sleep();
 
-	for(int i = 0; i < 8; i++) {
+	for(int i = 0; i < 6; i++) {
 		LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 	}
 }
