@@ -95,7 +95,7 @@ class RFM69 {
     void setNetwork(uint8_t networkID);
     bool canSend();
     void send(uint8_t toAddress, const void* buffer, uint8_t bufferSize, bool requestACK=false);
-    bool sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries=2, uint8_t retryWaitTime=40); // 40ms roundtrip req for 61byte packets
+    bool sendWithRetry(uint8_t toAddress, const void* buffer, uint8_t bufferSize, uint8_t retries=2, uint8_t retryWaitTime=150); // 150ms roundtrip req for 61byte packets
     bool receiveDone();
     bool ACKReceived(uint8_t fromNodeID);
     bool ACKRequested();
