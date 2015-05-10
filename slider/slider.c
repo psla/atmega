@@ -128,7 +128,7 @@ uint16_t drive(uint8_t direction)
 			++steps;
 			onestep(direction);
 			
-			_delay_ms(2);
+			_delay_ms(MOTOR_SPEED);
 		}
 		} else {
 		while(IS_SET(LEFT_SWITCH_READ, LEFT_SWITCH_PIN) == SWITCH_INACTIVE) {
@@ -137,7 +137,7 @@ uint16_t drive(uint8_t direction)
 			
 			onestep(direction);
 			
-			_delay_ms(2);
+			_delay_ms(MOTOR_SPEED);
 		}
 	}
 
