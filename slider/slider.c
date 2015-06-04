@@ -72,7 +72,7 @@ uint8_t state = STATE_PROGRAMMING;
 uint16_t steps_per_slider = 0;
 
 // declarations:
-uint8_t debounce_read(const uint8_t * port, uint8_t pin);
+uint8_t debounce_read(volatile uint8_t * port, uint8_t pin);
 uint16_t drive(uint8_t direction);
 void print_change_direction();
 void print_uint16(uint16_t number);
@@ -105,14 +105,14 @@ void calibrate() {
 	for(;;)
 	{
 		// no:
-		if(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
-			while(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+		if(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+			while(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
 			return;
 		}
 		
 		// yes:
-		if(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
-			while(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+		if(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+			while(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
 			set_steps_per_slide(steps);
 			steps_per_slider = get_steps_per_slide();
 			return;
@@ -160,7 +160,7 @@ uint16_t drive(uint8_t direction)
 /// this means that if it ever sees 0, it will return 0
 /// but to see 1, it will need to see 1 few times
 /// This method is actively blocking
-uint8_t debounce_read(const uint8_t * port, uint8_t pin) {
+uint8_t debounce_read(volatile uint8_t * port, uint8_t pin) {
 	uint8_t retry;
 	for(retry = 0; retry < 8; retry++) {
 		if(IS_SET(*port, pin) == BUTTON_NOT_PRESSED_LEVEL) {
@@ -360,7 +360,7 @@ void handle_programming() {
 	// to start with, ensure there is at least 2 seconds interval to move platform
 	switch(programming_state.state) {
 		case PROGRAMMING_STATE_TIME:
-		if(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			// maximum 600 minutes, minimum 10
 			programming_state.total_time_in_minutes = programming_state.total_time_in_minutes + 10;
 			if(programming_state.total_time_in_minutes > 600) {
@@ -372,18 +372,18 @@ void handle_programming() {
 			// read for the button to go up
 			// alternatively, support hold in the future (60 clicks to loop through right now..)
 			// or use potentiometer
-			while(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		
-		if(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
 			change_programming_state(PROGRAMMING_STATE_EXPOSURE_TIME);
 			
-			while(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		break;
 
 		case PROGRAMMING_STATE_EXPOSURE_TIME:
-		if(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			if(programming_state.exposure_time_in_tens_of_second < 10)
 			programming_state.exposure_time_in_tens_of_second += 2;
 			else
@@ -395,18 +395,18 @@ void handle_programming() {
 			print_exposure_time();
 
 			// while for the button to go up
-			while(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 
-		if(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
 			change_programming_state(PROGRAMMING_STATE_PICTURES);
 			
-			while(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 
 		break;
 		case PROGRAMMING_STATE_PICTURES:
-		if(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			programming_state.total_number_of_pictures += 50;
 			if(programming_state.total_number_of_pictures > 1000) {
 				programming_state.total_number_of_pictures = 50;
@@ -414,28 +414,28 @@ void handle_programming() {
 
 			print_pictures_count();
 
-			while(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 
-		if(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
 			change_programming_state(PROGRAMMING_STATE_DIRECTION);
 			
-			while(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 
 		break;
 		case PROGRAMMING_STATE_DIRECTION:
 		// No button?
-		if(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
 			// the answer is no, go to the next question
 			change_programming_state(PROGRAMMING_STATE_START);
 			
 			// and wait for the button to go up
-			while(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		
 		// Yes button?
-		if(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			// the answer is "yes", change the direction (and move the platform),
 			// go back to question with state no
 			lcd_clrscr();
@@ -452,36 +452,36 @@ void handle_programming() {
 			print_change_direction();
 
 			// wait for the button to go up
-			while(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		break;
 		case PROGRAMMING_STATE_START:
 		// Button 2 = YES
-		if(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			lcd_clrscr();
 			lcd_puts("Starting...");
 			
 			// wait for button to go up
-			while(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL);
+			while(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) != BUTTON_NOT_PRESSED_LEVEL);
 			
 			start_sliding();
 		}
 
-		if(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
 			// the answer is no, go to the first question
 			change_programming_state(PROGRAMMING_CALIBRATION);
 
 			// wait for the button to go up
-			while(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		break;
 		case PROGRAMMING_CALIBRATION:
 		// YES
-		if(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_PRESSED_LEVEL) {
 			lcd_clrscr();
 			lcd_puts("Calibrating...");
 			
-			while(debounce_read((const uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON2_READ, BUTTON2_PIN) == BUTTON_NOT_PRESSED_LEVEL) ;
 			
 			calibrate();
 			
@@ -489,9 +489,9 @@ void handle_programming() {
 		}
 		
 		// NO
-		if(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
+		if(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) == BUTTON_PRESSED_LEVEL) {
 			change_programming_state(PROGRAMMING_STATE_TIME);
-			while(debounce_read((const uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
+			while(debounce_read((volatile uint8_t *) &BUTTON1_READ, BUTTON1_PIN) != BUTTON_NOT_PRESSED_LEVEL) ;
 		}
 		break;
 	}
