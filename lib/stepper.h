@@ -27,6 +27,12 @@ void step(uint8_t steps, uint8_t interval_between_steps, uint8_t direction);
 /// 
 /// It will block until all steps are taken.
 /// Use interval_between_steps to set interval in ms.
-uint8_t safe_step(uint8_t steps, uint8_t interval_between_steps, uint8_t direction, const uint8_t * port, uint8_t mask, uint8_t abort_level);
+///
+/// battery_saver - 1 will unenergize motor after steps, while 0 will keep motor energized (increasing wear and heat and battery utilization)
+///					The steps will take 2 steps more time
+uint8_t safe_step(uint8_t steps, uint8_t interval_between_steps, uint8_t direction, const uint8_t * port, uint8_t mask, uint8_t abort_level, uint8_t battery_saver);
+
+/// Releases holding torque from the motor to preserve motor lifetime and battery. Reduces heat.
+void release_holding_torque();
 
 #endif /* STEPPER_H_ */

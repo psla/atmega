@@ -32,6 +32,10 @@
 // milliseconds between steps. minimum reasonable value: 4
 #define MOTOR_SPEED 6
 
+// if 1, motor will be unenergized (no holding torque) between pictures. if 0, motor will keep holding torque between pictures.
+// This may lead to motor wear and heat and battery usage.
+#define MOTOR_BATTERY_SAVER 1
+
 // when button is pressed it will be either HIGH or LOW
 // currently I am using built-in pull-up resistor and connected button to GND
 // so low-level indicates button is pressed
@@ -146,6 +150,8 @@ uint16_t drive(uint8_t direction)
 		} else {
 		slider_state.direction = DIRECTION_LEFT;
 	}
+	
+	release_holding_torque();
 	
 	return steps;
 }
@@ -273,7 +279,7 @@ void print_start_sliding() {
 	
 	// this is a minimum time that is required to capture a picture (shutter + travel time)
 	// add some fudge factor to it
-	uint16_t time_per_picture = (programming_state.exposure_time_in_tens_of_second + (slider_state.speed * MOTOR_SPEED / 100));
+	uint16_t time_per_picture = (programming_state.exposure_time_in_tens_of_second + ((slider_state.speed + 2 * MOTOR_BATTERY_SAVER) * MOTOR_SPEED / 100));
 	uint16_t interval_between_pictures = (((uint32_t) programming_state.total_time_in_minutes) * 10LL * 60LL / programming_state.total_number_of_pictures);
 	
 	print_uint16(time_per_picture);
@@ -551,10 +557,10 @@ void handle_sliding() {
 		if(slider_state.direction == DIRECTION_RIGHT)
 		{
 			// safely step right and abort when the border reached
-			border_reached = safe_step(slider_state.speed, MOTOR_SPEED, slider_state.direction, (const uint8_t *) &RIGHT_SWITCH_READ, 1 << RIGHT_SWITCH_PIN, SWITCH_ACTIVE);
+			border_reached = safe_step(slider_state.speed, MOTOR_SPEED, slider_state.direction, (const uint8_t *) &RIGHT_SWITCH_READ, 1 << RIGHT_SWITCH_PIN, SWITCH_ACTIVE, MOTOR_BATTERY_SAVER);
 		} else {
 			// safely step left and abort when border reached
-			border_reached = safe_step(slider_state.speed, MOTOR_SPEED, slider_state.direction, (const uint8_t *) &LEFT_SWITCH_READ, 1 << LEFT_SWITCH_PIN, SWITCH_ACTIVE);
+			border_reached = safe_step(slider_state.speed, MOTOR_SPEED, slider_state.direction, (const uint8_t *) &LEFT_SWITCH_READ, 1 << LEFT_SWITCH_PIN, SWITCH_ACTIVE, MOTOR_BATTERY_SAVER);
 		}
 		
 		if(border_reached) {
@@ -567,6 +573,9 @@ void handle_sliding() {
 		// this is constant in a run (rotation of specific degree will take always
 		// same amount of time)
 		// we must now wait remaining time
+		// TODO: we don't need 'millis' and time counting - we know exactly how long the stepping will take
+		// it is speed * MOTOR_SPEED + MOTOR_BATTERY_SAVER * 2 * MOTOR_SPEED 
+		//							   (because in battery saver we wait 2 additional steps for energizing and deenergizing of the coil).
 		repeat_wait = slider_state.tens_of_seconds_between_pictures - (passed_time / 100);
 		
 		for(; repeat_wait > 0; --repeat_wait) {
