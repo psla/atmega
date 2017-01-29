@@ -7,9 +7,17 @@
 int
 main (void)
 {
+	// LED demonstrating interrupts
+	DDRD |= _BV(DDB0); 
+	
+	// LED demonstrating that button was presset
     DDRB |= _BV(DDB0); 
+
+	// button (pull up)
     DDRB &= ~(1 << DDB1);
 	PORTB |= (1 << DDB1);
+
+	uint8_t counter = 0;
 
     while(1) 
     {
@@ -19,8 +27,20 @@ main (void)
 		} 
 		else{
 			CLEAR_BIT(PORTB, PB0);
+			counter = 0;
 		}
 
-        _delay_ms(500);
+		if(counter == 10) {
+			CLEAR_BIT(PORTD, PD7);
+		}
+
+		if(counter == 20) {
+			SET_BIT(PORTD, PD7);
+			counter = 0;
+		}
+
+        _delay_ms(10);
+
+		counter++;
     }
 }
