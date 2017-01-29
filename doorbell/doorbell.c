@@ -28,7 +28,9 @@ void sleep() {
 	 sei();
 }
 
-void wakeup() {
+ISR (INT0_vect)
+{
+	// wakeup. Clear interrupts, and wait for another sleep.
 	cli();
 }
 
@@ -44,10 +46,14 @@ main (void)
 	// button (pull up)
     BUTTON_REGISTRY &= ~(1 << BUTTON_PIN_INDEX);
 	BUTTON_PORT |= (1 << BUTTON_PIN_INDEX);
+	
+	// interrupts for the button. Low level triggers interrupt
+	EICRA |= (1 << ISC00);
+	EIMSK |= (1 << INT0);
 
 	// powersaving: disable ADC:
 	ADCSRA &= ~(1 << ADEN);
-
+	
 	uint8_t counter = 0;
 	
 	const uint8_t blinks_before_sleep = 20;
@@ -61,7 +67,10 @@ main (void)
 		} 
 		else {
 			CLEAR_BIT(PORTB, PB0);
-			counter = 0;
+			if(blinks > 2) {
+				blinks = 0;
+				counter = 0;
+			}
 		}
 
 		if(counter == 10) {
@@ -77,6 +86,7 @@ main (void)
 		if(blinks == blinks_before_sleep) {
 			CLEAR_BIT(PORTD, PD7);
 			sleep();
+			blinks = 0;
 		}
 
         _delay_ms(10);
