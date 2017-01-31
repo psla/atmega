@@ -13,7 +13,7 @@
 
 #define BUTTON_REGISTRY DDRD // is it input or output
 #define BUTTON_PIN		PIND // reading input
-#define BUTTON_PIN_INDEX	PD2 // index of the pin
+#define BUTTON_PIN_INDEX	PD3 // index of the pin
 #define BUTTON_PORT		PORTD // voltage levels for pins (pullup)
 
 void sleep() {
@@ -48,8 +48,8 @@ main (void)
 	BUTTON_PORT |= (1 << BUTTON_PIN_INDEX);
 	
 	// interrupts for the button. Low level triggers interrupt
-	EICRA |= (1 << ISC00);
-	EIMSK |= (1 << INT0);
+	EICRA |= (1 << ISC10);
+	EIMSK |= (1 << INT1);
 
 	// powersaving: disable ADC:
 	ADCSRA &= ~(1 << ADEN);
